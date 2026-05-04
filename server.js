@@ -9,13 +9,14 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 app.use("/uploads", express.static("app/uploads"));
 
 app.use(authRoutes);
 app.use(autorRoutes);
 app.use(libroRoutes);
 
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({ message: "API CRUD de libros, autores y comunidades" });
 });
 

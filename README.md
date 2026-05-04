@@ -295,3 +295,76 @@ Si ya tienes `origin` configurado, solo usa:
 ```bash
 git push
 ```
+
+
+## 13) Frontend incluido (HTML + Bootstrap)
+
+Se agregó un frontend simple en:
+- `public/index.html`
+- `public/app.js`
+
+Este frontend permite:
+- Signup / Signin
+- Crear autores
+- Crear libros
+- Listar autores y libros
+
+Al levantar el backend, abre:
+- `http://localhost:3000/`
+
+## 14) Desplegar en Railway (Backend + Frontend estático)
+
+Como el frontend está dentro de `public/`, Railway lo sirve junto con el backend Express.
+
+Pasos:
+1. Sube tu código a GitHub.
+2. En Railway, crea **New Project** > **Deploy from GitHub repo**.
+3. Selecciona este repositorio.
+4. Railway detectará Node automáticamente.
+5. En variables de entorno agrega:
+   - `DB_HOST`
+   - `DB_USER`
+   - `DB_PASSWORD`
+   - `DB_NAME`
+   - `JWT_SECRET`
+6. Si tu MySQL también está en Railway, copia esas credenciales del servicio MySQL.
+7. Deploy.
+8. Abre el dominio generado por Railway:
+   - `https://tu-app.up.railway.app/` (Frontend)
+   - `https://tu-app.up.railway.app/api/...` (API)
+
+### Recomendación CORS
+Si frontend y backend están en el mismo servicio (como aquí), no tendrás problema de CORS porque usan el mismo dominio.
+
+
+
+## 15) ¿Qué servicio de Railway usar para la web?
+
+Para este proyecto usa **1 servicio Web (Node.js)** en Railway:
+
+- Tipo: **Web Service** (Deploy from GitHub Repo)
+- Este único servicio te sirve:
+  - Frontend estático: `/`
+  - Backend API: `/api/*`
+
+Además necesitas **1 servicio de base de datos MySQL**:
+- Opción A: MySQL dentro de Railway (plugin/servicio DB)
+- Opción B: MySQL externo (Cloud SQL, PlanetScale, Aiven, etc.)
+
+### Arquitectura recomendada en Railway
+1. `lab07-web` → Servicio Web Node.js (este repositorio).
+2. `lab07-mysql` → Servicio MySQL (si lo quieres dentro de Railway).
+
+### Configuración mínima del servicio web
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Variables:
+  - `DB_HOST`
+  - `DB_USER`
+  - `DB_PASSWORD`
+  - `DB_NAME`
+  - `JWT_SECRET`
+
+Con eso tu dominio Railway quedará así:
+- `https://tu-app.up.railway.app/` → Frontend
+- `https://tu-app.up.railway.app/api/auth/signin` → API
