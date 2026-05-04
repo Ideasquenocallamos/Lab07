@@ -1,18 +1,8 @@
 import { Router } from "express";
-import { signup, signin } from "../controllers/auth.controller.js";
-import { verifySignUp } from "../middlewares/index.js";
+import { signin, signup } from "../controllers/auth.controller.js";
+import { requireFields } from "../middlewares/validate.js";
 
 const router = Router();
-
-router.post(
-  "/api/auth/signup",
-  [
-    verifySignUp.checkDuplicateUsernameOrEmail,
-    verifySignUp.checkRolesExisted
-  ],
-  signup
-);
-
-router.post("/api/auth/signin", signin);
-
+router.post("/api/auth/signup", requireFields(["nombre", "email", "password"]), signup);
+router.post("/api/auth/signin", requireFields(["email", "password"]), signin);
 export default router;
