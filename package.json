@@ -1,9 +1,10 @@
 {
-  "name": "jwt03",
+  "name": "lab07-crud-libros-autores",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
