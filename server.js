@@ -16,7 +16,7 @@ app.use(authRoutes);
 app.use(autorRoutes);
 app.use(libroRoutes);
 
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({ message: "API CRUD de libros, autores y comunidades" });
 });
 
