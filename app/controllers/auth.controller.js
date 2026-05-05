@@ -12,7 +12,7 @@ export const getCaptcha = async (req, res) => {
   let code = "";
   for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
   const captcha_id = `cap_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-  captchaStore.set(captcha_id, code);
+  captchaStore.set(captcha_id, { code, expiresAt: Date.now() + 2 * 60 * 1000 });
 
   const noise = Array.from({ length: 6 }).map((_, i) =>
     `<line x1="${10 + i * 30}" y1="${Math.random() * 50}" x2="${20 + i * 30}" y2="${Math.random() * 50}" stroke="#999" />`
@@ -25,7 +25,8 @@ export const getCaptcha = async (req, res) => {
 
 export const revealAuthorCode = async (req, res) => {
   const { captcha_id, answer } = req.body;
-  if (!captchaStore.has(captcha_id) || String(answer || "").toUpperCase().trim() !== String(captchaStore.get(captcha_id)).toUpperCase()) {
+  const data = captchaStore.get(captcha_id);
+  if (!data || Date.now() > data.expiresAt || String(answer || "").toUpperCase().trim() !== String(data.code).toUpperCase()) {
     return res.status(400).json({ message: "Captcha inválido" });
   }
   captchaStore.delete(captcha_id);
@@ -41,6 +42,9 @@ export const revealAuthorCode = async (req, res) => {
 export const signup = async (req, res) => {
   try {
     const { nombre, email, password, rol = "lector", admin_code } = req.body;
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || "")) {
+      return res.status(400).json({ message: "Por ahora solo se permite registro con correo Gmail" });
+    }
     const targetRole = ["autor", "lector", "mixto"].includes(rol) ? rol : "lector";
     if (["autor", "mixto"].includes(targetRole) && admin_code !== (process.env.ADMIN_REGISTER_CODE || "LAB07_ADMIN")) {
       return res.status(403).json({ message: "Código admin inválido para rol autor/mixto" });
@@ -52,6 +56,9 @@ export const signup = async (req, res) => {
 
 export const signin = async (req, res) => {
   try {
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(req.body.email || "")) {
+      return res.status(400).json({ message: "Por ahora solo se permite Gmail" });
+    }
     const user = await User.findOne({ where: { email: req.body.email } });
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
     if (!bcrypt.compareSync(req.body.password, user.password)) return res.status(401).json({ accessToken: null, message: "Contraseña inválida" });
