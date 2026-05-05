@@ -4,6 +4,7 @@ export default (sequelize, Sequelize) => {
     nombre_autor: { type: Sequelize.STRING, allowNull: false },
     pais_origen: { type: Sequelize.STRING, allowNull: false },
     fecha_nacimiento: { type: Sequelize.DATEONLY, allowNull: false },
-    ultima_actividad: { type: Sequelize.DATE, allowNull: true }
+    ultima_actividad: { type: Sequelize.DATE, allowNull: true },
+    user_id: { type: Sequelize.INTEGER, allowNull: true }
   });
 };

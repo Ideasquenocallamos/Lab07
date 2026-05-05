@@ -3,7 +3,7 @@ const Autor = db.autor;
 
 export const createAutor = async (req, res) => {
   try {
-    const autor = await Autor.create(req.body);
+    const autor = await Autor.create({ ...req.body, user_id: req.userId });
     res.status(201).json(autor);
   } catch (error) { res.status(500).json({ message: error.message }); }
 };

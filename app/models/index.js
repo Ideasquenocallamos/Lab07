@@ -20,6 +20,9 @@ db.libro = (await import("./libro.model.js")).default(sequelize, Sequelize);
 db.comunidad = (await import("./comunidad.model.js")).default(sequelize, Sequelize);
 db.sala = (await import("./sala.model.js")).default(sequelize, Sequelize);
 
+db.user.hasOne(db.autor, { foreignKey: "user_id" });
+db.autor.belongsTo(db.user, { foreignKey: "user_id" });
+
 db.autor.hasMany(db.libro, { foreignKey: "id_autor" });
 db.libro.belongsTo(db.autor, { foreignKey: "id_autor" });
 

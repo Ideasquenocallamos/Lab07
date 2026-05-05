@@ -388,3 +388,31 @@ Si ves errores como `SequelizeConnectionRefusedError` o `ECONNREFUSED`, revisa:
 Respuesta esperada:
 - `200` -> DB conectada
 - `503` -> DB no conectada (pero app viva)
+
+
+## 17) Roles y paneles (Autor admin vs Lector cliente)
+
+- `rol=autor`: panel administrativo (crear/editar/eliminar autores y libros).
+- `rol=lector`: panel cliente (solo ver contenido).
+
+Para crear cuenta `autor` en signup debes enviar:
+- `rol: "autor"`
+- `admin_code: "LAB07_ADMIN"` (o valor de `ADMIN_REGISTER_CODE`)
+
+Correo sugerido para admin:
+- `admin.autor@lab07.com`
+
+Variables recomendadas:
+```env
+ADMIN_REGISTER_CODE=LAB07_ADMIN
+```
+
+
+## 18) Regla de autor por defecto y anónimo
+
+Al crear libro:
+- Si envías `id_autor`, se usa ese autor.
+- Si NO envías `id_autor`, el sistema intenta usar el autor vinculado al usuario admin actual (`user_id`).
+- Si el admin no tiene autor vinculado, se asigna automáticamente a **Anónimo**.
+
+Además, el libro incluye `link_lectura` para redirigir al panel cliente (estilo Wattpad) y leer contenido digital.
