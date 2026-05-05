@@ -19,6 +19,11 @@ db.autor = (await import("./autor.model.js")).default(sequelize, Sequelize);
 db.libro = (await import("./libro.model.js")).default(sequelize, Sequelize);
 db.comunidad = (await import("./comunidad.model.js")).default(sequelize, Sequelize);
 db.sala = (await import("./sala.model.js")).default(sequelize, Sequelize);
+db.chat = (await import("./chat.model.js")).default(sequelize, Sequelize);
+db.member = (await import("./comunidad_member.model.js")).default(sequelize, Sequelize);
+db.salaMessage = (await import("./sala_message.model.js")).default(sequelize, Sequelize);
+db.post = (await import("./post.model.js")).default(sequelize, Sequelize);
+db.notification = (await import("./notification.model.js")).default(sequelize, Sequelize);
 
 db.user.hasOne(db.autor, { foreignKey: "user_id" });
 db.autor.belongsTo(db.user, { foreignKey: "user_id" });

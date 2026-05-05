@@ -1,64 +1,10 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Panel Wattpad-like</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body><div class="container py-4">
-  <h1>Plataforma de Lectura</h1>
-  <p class="text-muted">Registro/Login primero. Luego panel por rol: <b>Autor</b> o <b>Lector</b>.</p>
-  <div id="flash" class="alert d-none"></div>
-
-  <section class="card mb-3"><div class="card-body">
-    <h5>1) Acceso</h5>
-    <div class="row g-2">
-      <div class="col-md-3"><input id="nombre" class="form-control" placeholder="Nombre"></div>
-      <div class="col-md-3"><input id="email" class="form-control" placeholder="Correo"></div>
-      <div class="col-md-3"><input id="password" type="password" class="form-control" placeholder="Contraseña"></div>
-      <div class="col-md-3"><select id="rol" class="form-select"><option value="lector">Lector (cliente)</option><option value="autor">Autor (admin)</option></select></div>
-      <div class="col-md-4"><input id="adminCode" class="form-control" placeholder="Código admin (solo autor)"></div>
-    </div>
-    <div class="mt-2 d-flex gap-2"><button id="signup" class="btn btn-primary">Registrarse</button><button id="signin" class="btn btn-success">Ingresar</button><button id="logout" class="btn btn-outline-secondary">Salir</button></div>
-    <small id="session"></small>
-    <div class="mt-2 small">Cuenta admin sugerida: <b>admin.autor@lab07.com</b> (rol autor).</div>
-  </div></section>
-
-  <section class="card mb-3"><div class="card-body">
-    <h5>2) Perfil (estilo Wattpad)</h5>
-    <div id="perfil"></div>
-  </div></section>
-
-  <section id="panelAutor" class="card mb-3 d-none"><div class="card-body">
-    <h5>Panel Administrador Autor</h5>
-    <p class="text-muted">Puede crear/editar/eliminar autores y libros.</p>
-    <button id="loadAutores" class="btn btn-sm btn-outline-primary">Listar autores</button>
-    <button id="loadLibros" class="btn btn-sm btn-outline-primary">Listar libros</button>
-    <div class="row mt-2 g-2">
-      <div class="col-md-4"><input id="aNombre" class="form-control" placeholder="Nombre autor"></div>
-      <div class="col-md-4"><input id="aPais" class="form-control" placeholder="País"></div>
-      <div class="col-md-4"><input id="aFecha" type="date" class="form-control"></div>
-      <div class="col-md-12"><button id="crearAutor" class="btn btn-dark">Crear autor</button></div>
-    </div>
-    <hr>
-    <div class="row g-2">
-      <div class="col-md-4"><input id="lTitulo" class="form-control" placeholder="Título"></div>
-      <div class="col-md-2"><input id="lAnio" class="form-control" placeholder="Año"></div>
-      <div class="col-md-2"><input id="lAutor" class="form-control" placeholder="ID autor (opcional)"></div>
-      <div class="col-md-2"><input id="lDerechos" class="form-control" placeholder="Derechos"></div>
-      <div class="col-md-2"><input id="lPortada" class="form-control" placeholder="URL portada"></div>
-      <div class="col-md-12"><input id="lLink" class="form-control" placeholder="Link lectura cliente (Wattpad-like)"></div>
-      <div class="col-md-12"><button id="crearLibro" class="btn btn-dark">Crear libro</button></div>
-    </div>
-  </div></section>
-
-  <section id="panelLector" class="card mb-3 d-none"><div class="card-body">
-    <h5>Panel Cliente Lector</h5>
-    <p class="text-muted">Puede explorar libros y autores.</p>
-    <button id="loadAutoresLector" class="btn btn-sm btn-outline-primary">Ver autores</button>
-    <button id="loadLibrosLector" class="btn btn-sm btn-outline-primary">Ver libros</button>
-  </div></section>
-
-  <div class="row g-3"><div class="col-md-6"><h6>Autores</h6><pre id="outAutores"></pre></div><div class="col-md-6"><h6>Libros</h6><pre id="outLibros"></pre></div></div>
+<!doctype html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>BookSocial</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"><link rel="stylesheet" href="/styles.css"></head><body>
+<nav class="navbar navbar-expand-lg bg-dark navbar-dark"><div class="container"><a class="navbar-brand" href="#"><i class="bi bi-book-half"></i> BookSocial</a><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-light nav-btn" data-tab="home"><i class="bi bi-house"></i> Home</button><button class="btn btn-sm btn-outline-light nav-btn" data-tab="feed"><i class="bi bi-megaphone"></i> Promoción</button><button class="btn btn-sm btn-outline-light nav-btn" data-tab="comunidad"><i class="bi bi-discord"></i> Comunidad</button><button class="btn btn-sm btn-outline-light nav-btn" data-tab="chat"><i class="bi bi-chat-dots"></i> Chat</button><button class="btn btn-sm btn-outline-light nav-btn" data-tab="noti"><i class="bi bi-bell"></i> Notificaciones</button><button class="btn btn-sm btn-outline-light nav-btn" data-tab="perfil"><i class="bi bi-person-circle"></i> Perfil</button></div></div></nav>
+<div class="container py-3"><div id="flash" class="alert d-none"></div>
+<section id="tab-home" class="tab-section"><h4><i class="bi bi-search"></i> Buscar libros</h4><div class="row g-2"><div class="col-md-5"><input id="searchQ" class="form-control" placeholder="Buscar título"></div><div class="col-md-4"><input id="privateCode" class="form-control" placeholder="Código privado"></div><div class="col-md-3"><button id="buscar" class="btn btn-primary w-100">Buscar</button></div></div><pre id="outLibros" class="mt-2"></pre></section>
+<section id="tab-feed" class="tab-section d-none"><h4><i class="bi bi-megaphone"></i> Promoción estilo Twitter/Wattpad</h4><div class="row g-2"><div class="col-md-8"><input id="postText" class="form-control" placeholder="Promociona tu libro"></div><div class="col-md-2"><input id="postTags" class="form-control" placeholder="#tags"></div><div class="col-md-2"><button id="postBtn" class="btn btn-success w-100">Publicar</button></div></div><button id="loadFeed" class="btn btn-outline-primary btn-sm mt-2">Cargar feed</button><pre id="outFeed" class="mt-2"></pre></section>
+<section id="tab-comunidad" class="tab-section d-none"><h4><i class="bi bi-discord"></i> Comunidades y Salas (Discord-like)</h4><div class="row g-2"><div class="col-md-2"><select id="cTipo" class="form-select"><option value="publica">Pública</option><option value="privada">Privada</option></select></div><div class="col-md-3"><input id="cDesc" class="form-control" placeholder="Descripción"></div><div class="col-md-3"><input id="cReglas" class="form-control" placeholder="Reglas"></div><div class="col-md-2"><button id="crearComunidad" class="btn btn-dark w-100">Crear</button></div><div class="col-md-2"><button id="listarComunidades" class="btn btn-outline-primary w-100">Listar</button></div></div><div class="row g-2 mt-2"><div class="col-md-3"><input id="codigoComunidad" class="form-control" placeholder="Código privada/join"></div><div class="col-md-3"><input id="idComunidadJoin" class="form-control" placeholder="ID comunidad"></div><div class="col-md-2"><button id="joinComunidad" class="btn btn-secondary w-100">Unirse</button></div><div class="col-md-2"><input id="idComunidadSala" class="form-control" placeholder="ID comunidad sala"></div><div class="col-md-2"><input id="nombreSala" class="form-control" placeholder="Nombre sala"></div><div class="col-md-2"><button id="crearSala" class="btn btn-secondary w-100">Crear sala</button></div></div><pre id="outComunidad" class="mt-2"></pre></section>
+<section id="tab-chat" class="tab-section d-none"><h4><i class="bi bi-chat-dots"></i> Mensajes directos y salas</h4><div class="row g-2"><div class="col-md-2"><input id="toUser" class="form-control" placeholder="ID usuario"></div><div class="col-md-6"><input id="msgText" class="form-control" placeholder="Mensaje directo"></div><div class="col-md-2"><button id="sendMsg" class="btn btn-success w-100">Enviar</button></div><div class="col-md-2"><button id="loadInbox" class="btn btn-outline-primary w-100">Bandeja</button></div></div><div class="row g-2 mt-2"><div class="col-md-2"><input id="idSalaMsg" class="form-control" placeholder="ID sala"></div><div class="col-md-6"><input id="salaMsg" class="form-control" placeholder="Mensaje sala"></div><div class="col-md-2"><button id="sendSalaMsg" class="btn btn-warning w-100">Enviar sala</button></div><div class="col-md-2"><button id="loadSalaMsg" class="btn btn-outline-primary w-100">Ver sala</button></div></div><pre id="outChat" class="mt-2"></pre></section>
+<section id="tab-noti" class="tab-section d-none"><h4><i class="bi bi-bell"></i> Caja de notificaciones</h4><button id="loadNoti" class="btn btn-outline-primary btn-sm">Cargar notificaciones</button><pre id="outNoti" class="mt-2"></pre></section>
+<section id="tab-perfil" class="tab-section d-none"><h4><i class="bi bi-person-circle"></i> Perfil</h4><div class="row g-2"><div class="col-md-3"><input id="nombre" class="form-control" placeholder="Nombre"></div><div class="col-md-3"><input id="email" class="form-control" placeholder="Correo"></div><div class="col-md-2"><input id="password" type="password" class="form-control" placeholder="Contraseña"></div><div class="col-md-2"><select id="rol" class="form-select"><option value="lector">Lector</option><option value="autor">Autor</option><option value="mixto">Mixto</option></select></div><div class="col-md-2"><input id="adminCode" class="form-control" placeholder="Código admin"></div></div><div class="mt-2 d-flex gap-2"><button id="signup" class="btn btn-primary">Registrarse</button><button id="signin" class="btn btn-success">Ingresar</button><button id="logout" class="btn btn-outline-secondary">Salir</button><button id="btnCaptcha" class="btn btn-warning">Código autor</button><button id="btnIncognito" class="btn btn-dark">Modo incógnito (premium)</button></div><small id="session"></small><div id="authorCodeBox"></div></section>
 </div><script src="/app.js"></script></body></html>

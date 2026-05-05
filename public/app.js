@@ -1,27 +1,23 @@
-const API = window.location.origin;
-let token = localStorage.getItem('token') || '';
-let me = JSON.parse(localStorage.getItem('me') || 'null');
-const $=(id)=>document.getElementById(id);
-const flash=(m,ok=true)=>{const e=$('flash');e.className=`alert ${ok?'alert-success':'alert-danger'}`;e.textContent=m;e.classList.remove('d-none');};
-const refreshUI=()=>{
-  $('session').textContent = me ? `Sesión: ${me.nombre} (${me.rol})` : 'Sin sesión';
-  $('perfil').innerHTML = me ? `<b>${me.nombre}</b><br>${me.email}<br>Rol: ${me.rol}<br>Bio: ${me.bio || 'Sin bio'}` : 'Debes iniciar sesión.';
-  $('panelAutor').classList.toggle('d-none', !me || me.rol!=='autor');
-  $('panelLector').classList.toggle('d-none', !me || me.rol!=='lector');
-};
-refreshUI();
+const API=window.location.origin;let token=localStorage.getItem('token')||'';let me=JSON.parse(localStorage.getItem('me')||'null');
+const $=i=>document.getElementById(i);const flash=(m,o=true)=>{const e=$('flash');e.className=`alert ${o?'alert-success':'alert-danger'}`;e.textContent=m;e.classList.remove('d-none');};
 async function api(path,{method='GET',body,auth=false}={}){const h={'Content-Type':'application/json'};if(auth)h.Authorization=`Bearer ${token}`;const r=await fetch(`${API}${path}`,{method,headers:h,body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw new Error(d.message||'Error');return d;}
+function ui(){document.querySelectorAll('.tab-section').forEach(s=>s.classList.add('d-none'));$('tab-home').classList.remove('d-none');$('session').textContent=me?`${me.nombre} (${me.rol})`:'Sin sesión';}
+ui();document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab-section').forEach(s=>s.classList.add('d-none'));$(`tab-${b.dataset.tab}`).classList.remove('d-none');});
+$('signup').onclick=async()=>{try{await api('/api/auth/signup',{method:'POST',body:{nombre:$('nombre').value,email:$('email').value,password:$('password').value,rol:$('rol').value,admin_code:$('adminCode').value}});flash('Registrado');}catch(e){flash(e.message,false)}};
+$('signin').onclick=async()=>{try{const d=await api('/api/auth/signin',{method:'POST',body:{email:$('email').value,password:$('password').value}});token=d.accessToken;me=d;localStorage.setItem('token',token);localStorage.setItem('me',JSON.stringify(me));ui();flash('Bienvenido');}catch(e){flash(e.message,false)}};
+$('logout').onclick=()=>{token='';me=null;localStorage.clear();ui();flash('Sesión cerrada');};
+$('btnCaptcha').onclick=async()=>{try{const c=await api('/api/auth/captcha',{auth:true});const ans=prompt(c.question);const r=await api('/api/auth/author-code',{method:'POST',auth:true,body:{captcha_id:c.captcha_id,answer:ans}});$('authorCodeBox').textContent=`Código autor: ${r.author_code}`;}catch(e){flash(e.message,false)}};
+$('buscar').onclick=async()=>{try{const q=encodeURIComponent($('searchQ').value||'');const c=encodeURIComponent($('privateCode').value||'');const path=token?`/api/libros?q=${q}&codigo_privado=${c}`:`/api/libros-publicos?q=${q}`;$('outLibros').textContent=JSON.stringify(await api(path,{auth:!!token}),null,2);}catch(e){flash(e.message,false)}};
+$('postBtn').onclick=async()=>{try{await api('/api/feed/post',{method:'POST',auth:true,body:{texto:$('postText').value,etiquetas:$('postTags').value}});flash('Post publicado');}catch(e){flash(e.message,false)}};
+$('loadFeed').onclick=async()=>{try{$('outFeed').textContent=JSON.stringify(await api('/api/feed',{auth:true}),null,2);}catch(e){flash(e.message,false)}};
+$('crearComunidad').onclick=async()=>{try{const r=await api('/api/comunidades',{method:'POST',auth:true,body:{tipo:$('cTipo').value,descripcion:$('cDesc').value,reglas:$('cReglas').value}});flash(`Comunidad creada ${r.id_comunidad} ${r.enlace_invitacion||''}`);}catch(e){flash(e.message,false)}};
+$('listarComunidades').onclick=async()=>{try{$('outComunidad').textContent=JSON.stringify(await api(`/api/comunidades?codigo=${encodeURIComponent($('codigoComunidad').value||'')}`,{auth:true}),null,2);}catch(e){flash(e.message,false)}};
+$('joinComunidad').onclick=async()=>{try{await api('/api/comunidades/join',{method:'POST',auth:true,body:{id_comunidad:Number($('idComunidadJoin').value),codigo:$('codigoComunidad').value}});flash('Te uniste a comunidad');}catch(e){flash(e.message,false)}};
+$('crearSala').onclick=async()=>{try{await api('/api/salas',{method:'POST',auth:true,body:{id_comunidad:Number($('idComunidadSala').value),nombre_sala:$('nombreSala').value,tema:'general'}});flash('Sala creada');}catch(e){flash(e.message,false)}};
+$('sendMsg').onclick=async()=>{try{await api('/api/chat/send',{method:'POST',auth:true,body:{to_user_id:Number($('toUser').value),mensaje:$('msgText').value}});flash('Mensaje enviado');}catch(e){flash(e.message,false)}};
+$('loadInbox').onclick=async()=>{try{$('outChat').textContent=JSON.stringify(await api('/api/chat/inbox',{auth:true}),null,2);}catch(e){flash(e.message,false)}};
+$('sendSalaMsg').onclick=async()=>{try{await api('/api/salas/message',{method:'POST',auth:true,body:{id_sala:Number($('idSalaMsg').value),contenido:$('salaMsg').value}});flash('Mensaje en sala enviado');}catch(e){flash(e.message,false)}};
+$('loadSalaMsg').onclick=async()=>{try{$('outChat').textContent=JSON.stringify(await api(`/api/salas/${Number($('idSalaMsg').value)}/messages`,{auth:true}),null,2);}catch(e){flash(e.message,false)}};
+$('loadNoti').onclick=async()=>{try{$('outNoti').textContent=JSON.stringify(await api('/api/notifications',{auth:true}),null,2);}catch(e){flash(e.message,false)}};
 
-$('signup').onclick=async()=>{try{await api('/api/auth/signup',{method:'POST',body:{nombre:$('nombre').value,email:$('email').value,password:$('password').value,rol:$('rol').value,admin_code:$('adminCode').value}});flash('Registro exitoso, ahora ingresa.');}catch(e){flash(e.message,false)}};
-$('signin').onclick=async()=>{try{const d=await api('/api/auth/signin',{method:'POST',body:{email:$('email').value,password:$('password').value}});token=d.accessToken;me=d;localStorage.setItem('token',token);localStorage.setItem('me',JSON.stringify(me));refreshUI();flash('Bienvenido '+d.nombre);}catch(e){flash(e.message,false)}};
-$('logout').onclick=()=>{token='';me=null;localStorage.removeItem('token');localStorage.removeItem('me');refreshUI();flash('Sesión cerrada');};
-
-const loadAutores=async()=>$('outAutores').textContent=JSON.stringify(await api('/api/autores',{auth:true}),null,2);
-const loadLibros=async()=>{const libros=await api('/api/libros',{auth:true});$('outLibros').textContent=JSON.stringify(libros,null,2); if(me?.rol==='lector'){const links=libros.map(l=>`• ${l.titulo}: ${l.link_lectura || 'sin link'}`).join('\n'); flash('Lectura disponible para cliente:\n'+links,true);} };
-$('loadAutores').onclick=()=>loadAutores().catch(e=>flash(e.message,false));
-$('loadLibros').onclick=()=>loadLibros().catch(e=>flash(e.message,false));
-$('loadAutoresLector').onclick=()=>loadAutores().catch(e=>flash(e.message,false));
-$('loadLibrosLector').onclick=()=>loadLibros().catch(e=>flash(e.message,false));
-
-$('crearAutor').onclick=async()=>{try{await api('/api/autores',{method:'POST',auth:true,body:{nombre_autor:$('aNombre').value,pais_origen:$('aPais').value,fecha_nacimiento:$('aFecha').value}});flash('Autor creado');loadAutores();}catch(e){flash(e.message,false)}};
-$('crearLibro').onclick=async()=>{try{await api('/api/libros',{method:'POST',auth:true,body:{titulo:$('lTitulo').value,anio_publicacion:Number($('lAnio').value),id_autor:$('lAutor').value?Number($('lAutor').value):null,derechos:$('lDerechos').value,portada:$('lPortada').value,link_lectura:$('lLink').value}});flash('Libro creado');loadLibros();}catch(e){flash(e.message,false)}};
+$('btnIncognito').onclick=async()=>{try{const r=await api('/api/auth/incognito/toggle',{method:'POST',auth:true});flash(`Incógnito: ${r.incognito_mode?'ACTIVO':'INACTIVO'}`);}catch(e){flash(e.message,false)}};

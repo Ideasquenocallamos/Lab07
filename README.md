@@ -416,3 +416,15 @@ Al crear libro:
 - Si el admin no tiene autor vinculado, se asigna automáticamente a **Anónimo**.
 
 Además, el libro incluye `link_lectura` para redirigir al panel cliente (estilo Wattpad) y leer contenido digital.
+
+
+## 19) Captcha código autor, visibilidad y búsqueda
+
+- Botón frontend: **Obtener código autor (Captcha)**.
+- Endpoint captcha: `GET /api/auth/captcha`
+- Endpoint código autor: `POST /api/auth/author-code`
+- Un correo por autor: se mantiene `email` único en `users`.
+- Libros con visibilidad: `publico`, `privado`, `borrador`.
+- Libros privados se muestran solo con `codigo_privado`.
+- Búsqueda por título/referencia con `q` y código privado opcional.
+- Campos nuevos de libro: `etiquetas`, `comentarios_resenas`, `link_lectura`.
