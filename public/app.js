@@ -17,11 +17,11 @@ $('signin').onclick=async()=>{try{const d=await api('/api/auth/signin',{method:'
 $('logout').onclick=()=>{token='';me=null;localStorage.removeItem('token');localStorage.removeItem('me');refreshUI();flash('Sesión cerrada');};
 
 const loadAutores=async()=>$('outAutores').textContent=JSON.stringify(await api('/api/autores',{auth:true}),null,2);
-const loadLibros=async()=>$('outLibros').textContent=JSON.stringify(await api('/api/libros',{auth:true}),null,2);
+const loadLibros=async()=>{const libros=await api('/api/libros',{auth:true});$('outLibros').textContent=JSON.stringify(libros,null,2); if(me?.rol==='lector'){const links=libros.map(l=>`• ${l.titulo}: ${l.link_lectura || 'sin link'}`).join('\n'); flash('Lectura disponible para cliente:\n'+links,true);} };
 $('loadAutores').onclick=()=>loadAutores().catch(e=>flash(e.message,false));
 $('loadLibros').onclick=()=>loadLibros().catch(e=>flash(e.message,false));
 $('loadAutoresLector').onclick=()=>loadAutores().catch(e=>flash(e.message,false));
 $('loadLibrosLector').onclick=()=>loadLibros().catch(e=>flash(e.message,false));
 
 $('crearAutor').onclick=async()=>{try{await api('/api/autores',{method:'POST',auth:true,body:{nombre_autor:$('aNombre').value,pais_origen:$('aPais').value,fecha_nacimiento:$('aFecha').value}});flash('Autor creado');loadAutores();}catch(e){flash(e.message,false)}};
-$('crearLibro').onclick=async()=>{try{await api('/api/libros',{method:'POST',auth:true,body:{titulo:$('lTitulo').value,anio_publicacion:Number($('lAnio').value),id_autor:Number($('lAutor').value),derechos:$('lDerechos').value,portada:$('lPortada').value}});flash('Libro creado');loadLibros();}catch(e){flash(e.message,false)}};
+$('crearLibro').onclick=async()=>{try{await api('/api/libros',{method:'POST',auth:true,body:{titulo:$('lTitulo').value,anio_publicacion:Number($('lAnio').value),id_autor:$('lAutor').value?Number($('lAutor').value):null,derechos:$('lDerechos').value,portada:$('lPortada').value,link_lectura:$('lLink').value}});flash('Libro creado');loadLibros();}catch(e){flash(e.message,false)}};

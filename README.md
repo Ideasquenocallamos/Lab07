@@ -406,3 +406,13 @@ Variables recomendadas:
 ```env
 ADMIN_REGISTER_CODE=LAB07_ADMIN
 ```
+
+
+## 18) Regla de autor por defecto y anónimo
+
+Al crear libro:
+- Si envías `id_autor`, se usa ese autor.
+- Si NO envías `id_autor`, el sistema intenta usar el autor vinculado al usuario admin actual (`user_id`).
+- Si el admin no tiene autor vinculado, se asigna automáticamente a **Anónimo**.
+
+Además, el libro incluye `link_lectura` para redirigir al panel cliente (estilo Wattpad) y leer contenido digital.

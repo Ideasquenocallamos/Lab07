@@ -2,9 +2,27 @@ import db from "../models/index.js";
 const Libro = db.libro;
 const Autor = db.autor;
 
+async function resolveAutorId(userId, requestedAutorId) {
+  if (requestedAutorId) return requestedAutorId;
+  const myAutor = await Autor.findOne({ where: { user_id: userId } });
+  if (myAutor) return myAutor.id_autor;
+
+  const [anon] = await Autor.findOrCreate({
+    where: { nombre_autor: "Anónimo" },
+    defaults: {
+      pais_origen: "Desconocido",
+      fecha_nacimiento: "1900-01-01",
+      ultima_actividad: null,
+      user_id: null
+    }
+  });
+  return anon.id_autor;
+}
+
 export const createLibro = async (req, res) => {
   try {
     const payload = { ...req.body };
+    payload.id_autor = await resolveAutorId(req.userId, payload.id_autor);
     const libro = await Libro.create(payload);
     res.status(201).json(libro);
   } catch (error) { res.status(500).json({ message: error.message }); }
