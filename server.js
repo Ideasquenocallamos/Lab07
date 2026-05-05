@@ -16,11 +16,22 @@ app.use(authRoutes);
 app.use(autorRoutes);
 app.use(libroRoutes);
 
-app.get("/api/health", (req, res) => {
-  res.json({ message: "API CRUD de libros, autores y comunidades" });
+app.get("/api/health", async (req, res) => {
+  try {
+    await db.sequelize.authenticate();
+    res.json({ status: "ok", db: "connected" });
+  } catch {
+    res.status(503).json({ status: "degraded", db: "disconnected" });
+  }
 });
 
-db.sequelize.sync().then(() => {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
-}).catch((error) => console.error("Error de conexión:", error));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+  console.log(`Servidor en puerto ${PORT}`);
+  try {
+    await db.sequelize.sync();
+    console.log("Base de datos sincronizada");
+  } catch (error) {
+    console.error("No se pudo sincronizar DB al iniciar:", error.message);
+  }
+});

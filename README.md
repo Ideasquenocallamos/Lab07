@@ -368,3 +368,23 @@ Además necesitas **1 servicio de base de datos MySQL**:
 Con eso tu dominio Railway quedará así:
 - `https://tu-app.up.railway.app/` → Frontend
 - `https://tu-app.up.railway.app/api/auth/signin` → API
+
+
+## 16) Error ECONNREFUSED en Railway (solución)
+
+Si ves errores como `SequelizeConnectionRefusedError` o `ECONNREFUSED`, revisa:
+
+1. Variables correctas en Railway:
+   - `DB_HOST`
+   - `DB_PORT` (normalmente `3306`)
+   - `DB_USER`
+   - `DB_PASSWORD`
+   - `DB_NAME`
+2. Si tu proveedor exige SSL, activa:
+   - `DB_SSL=true`
+3. Verifica con:
+   - `GET /api/health`
+
+Respuesta esperada:
+- `200` -> DB conectada
+- `503` -> DB no conectada (pero app viva)
