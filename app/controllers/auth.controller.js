@@ -8,16 +8,24 @@ const captchaStore = new Map();
 const genCode = () => `AUT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
 export const getCaptcha = async (req, res) => {
-  const a = Math.floor(Math.random() * 9) + 1;
-  const b = Math.floor(Math.random() * 9) + 1;
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
   const captcha_id = `cap_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-  captchaStore.set(captcha_id, a + b);
-  res.json({ captcha_id, question: `${a} + ${b} = ?` });
+  captchaStore.set(captcha_id, code);
+
+  const noise = Array.from({ length: 6 }).map((_, i) =>
+    `<line x1="${10 + i * 30}" y1="${Math.random() * 50}" x2="${20 + i * 30}" y2="${Math.random() * 50}" stroke="#999" />`
+  ).join("");
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="70"><rect width="100%" height="100%" fill="#f4f4f4"/>${noise}<text x="20" y="45" font-size="32" font-family="monospace" fill="#222" letter-spacing="6">${code}</text></svg>`;
+  const image_base64 = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  res.json({ captcha_id, image_base64 });
 };
 
 export const revealAuthorCode = async (req, res) => {
   const { captcha_id, answer } = req.body;
-  if (!captchaStore.has(captcha_id) || Number(answer) !== captchaStore.get(captcha_id)) {
+  if (!captchaStore.has(captcha_id) || String(answer || "").toUpperCase().trim() !== String(captchaStore.get(captcha_id)).toUpperCase()) {
     return res.status(400).json({ message: "Captcha inválido" });
   }
   captchaStore.delete(captcha_id);
