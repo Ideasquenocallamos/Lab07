@@ -1,75 +1,40 @@
 import db from "../models/index.js";
-import authConfig from "../config/auth.config.js";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import config from "../config/auth.config.js";
 
 const User = db.user;
-const Role = db.role;
-const Op = db.Sequelize.Op;
 
-export const signup = (req, res) => {
-  User.create({
-    username: req.body.username,
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 8)
-  })
-    .then((user) => {
-      if (req.body.roles) {
-        Role.findAll({
-          where: { name: { [Op.or]: req.body.roles } }
-        }).then((roles) => {
-          user.setRoles(roles).then(() => {
-            res.status(201).json({ message: "Usuario registrado exitosamente" });
-          });
-        });
-      } else {
-        user.setRoles([1]).then(() => {
-          res.status(201).json({ message: "Usuario registrado exitosamente" });
-        });
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
+export const signup = async (req, res) => {
+  try {
+    const { nombre, email, password, rol = "lector", admin_code } = req.body;
+    const targetRole = rol === "autor" ? "autor" : "lector";
+    if (targetRole === "autor" && admin_code !== (process.env.ADMIN_REGISTER_CODE || "LAB07_ADMIN")) {
+      return res.status(403).json({ message: "Código admin inválido para rol autor" });
+    }
+    const user = await User.create({
+      nombre,
+      email,
+      rol: targetRole,
+      password: bcrypt.hashSync(password, 8)
     });
+    res.status(201).json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-export const signin = (req, res) => {
-  User.findOne({
-    where: { username: req.body.username }
-  })
-    .then((user) => {
-      if (!user) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
-      }
+export const signin = async (req, res) => {
+  try {
+    const user = await User.findOne({ where: { email: req.body.email } });
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
-      const passwordIsValid = bcrypt.compareSync(
-        req.body.password,
-        user.password
-      );
+    const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
+    if (!passwordIsValid) return res.status(401).json({ accessToken: null, message: "Contraseña inválida" });
 
-      if (!passwordIsValid) {
-        return res.status(401).json({
-          accessToken: null,
-          message: "Contrasena incorrecta"
-        });
-      }
-
-      const token = jwt.sign({ id: user.id }, authConfig.secret, {
-        algorithm: "HS256",
-        expiresIn: 86400
-      });
-
-      user.getRoles().then((roles) => {
-        res.status(200).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          roles: roles.map((role) => role.name),
-          accessToken: token
-        });
-      });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
+    const token = jwt.sign({ id: user.id, rol: user.rol }, config.secret, { expiresIn: 86400 });
+    res.json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, bio: user.bio, avatar_url: user.avatar_url, accessToken: token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
