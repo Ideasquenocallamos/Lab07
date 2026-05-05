@@ -1,3 +1,3 @@
 export default {
-  secret: "tecsup-secret-key-jwt-2025"
+  secret: process.env.JWT_SECRET || "lab07-secret"
 };

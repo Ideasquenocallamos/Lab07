@@ -1,75 +1,72 @@
 import db from "../models/index.js";
-import authConfig from "../config/auth.config.js";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import config from "../config/auth.config.js";
 
 const User = db.user;
-const Role = db.role;
-const Op = db.Sequelize.Op;
+const captchaStore = new Map();
+const genCode = () => `AUT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
-export const signup = (req, res) => {
-  User.create({
-    username: req.body.username,
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 8)
-  })
-    .then((user) => {
-      if (req.body.roles) {
-        Role.findAll({
-          where: { name: { [Op.or]: req.body.roles } }
-        }).then((roles) => {
-          user.setRoles(roles).then(() => {
-            res.status(201).json({ message: "Usuario registrado exitosamente" });
-          });
-        });
-      } else {
-        user.setRoles([1]).then(() => {
-          res.status(201).json({ message: "Usuario registrado exitosamente" });
-        });
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
+export const getCaptcha = async (req, res) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  const captcha_id = `cap_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  captchaStore.set(captcha_id, code);
+
+  const noise = Array.from({ length: 6 }).map((_, i) =>
+    `<line x1="${10 + i * 30}" y1="${Math.random() * 50}" x2="${20 + i * 30}" y2="${Math.random() * 50}" stroke="#999" />`
+  ).join("");
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="70"><rect width="100%" height="100%" fill="#f4f4f4"/>${noise}<text x="20" y="45" font-size="32" font-family="monospace" fill="#222" letter-spacing="6">${code}</text></svg>`;
+  const image_base64 = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  res.json({ captcha_id, image_base64 });
 };
 
-export const signin = (req, res) => {
-  User.findOne({
-    where: { username: req.body.username }
-  })
-    .then((user) => {
-      if (!user) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
-      }
+export const revealAuthorCode = async (req, res) => {
+  const { captcha_id, answer } = req.body;
+  if (!captchaStore.has(captcha_id) || String(answer || "").toUpperCase().trim() !== String(captchaStore.get(captcha_id)).toUpperCase()) {
+    return res.status(400).json({ message: "Captcha inválido" });
+  }
+  captchaStore.delete(captcha_id);
+  const user = await User.findByPk(req.userId);
+  if (!user || !["autor", "mixto"].includes(user.rol)) return res.status(403).json({ message: "Solo autor puede obtener código" });
+  if (!user.author_code) {
+    user.author_code = genCode();
+    await user.save();
+  }
+  res.json({ author_code: user.author_code });
+};
 
-      const passwordIsValid = bcrypt.compareSync(
-        req.body.password,
-        user.password
-      );
+export const signup = async (req, res) => {
+  try {
+    const { nombre, email, password, rol = "lector", admin_code } = req.body;
+    const targetRole = ["autor", "lector", "mixto"].includes(rol) ? rol : "lector";
+    if (["autor", "mixto"].includes(targetRole) && admin_code !== (process.env.ADMIN_REGISTER_CODE || "LAB07_ADMIN")) {
+      return res.status(403).json({ message: "Código admin inválido para rol autor/mixto" });
+    }
+    const user = await User.create({ nombre, email, rol: targetRole, author_code: ["autor", "mixto"].includes(targetRole) ? genCode() : null, password: bcrypt.hashSync(password, 8) });
+    res.status(201).json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
 
-      if (!passwordIsValid) {
-        return res.status(401).json({
-          accessToken: null,
-          message: "Contrasena incorrecta"
-        });
-      }
+export const signin = async (req, res) => {
+  try {
+    const user = await User.findOne({ where: { email: req.body.email } });
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!bcrypt.compareSync(req.body.password, user.password)) return res.status(401).json({ accessToken: null, message: "Contraseña inválida" });
+    const token = jwt.sign({ id: user.id, rol: user.rol }, config.secret, { expiresIn: 86400 });
+    res.json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, is_premium: user.is_premium, incognito_mode: user.incognito_mode, linked_author_id: user.linked_author_id, bio: user.bio, avatar_url: user.avatar_url, accessToken: token });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
 
-      const token = jwt.sign({ id: user.id }, authConfig.secret, {
-        algorithm: "HS256",
-        expiresIn: 86400
-      });
 
-      user.getRoles().then((roles) => {
-        res.status(200).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          roles: roles.map((role) => role.name),
-          accessToken: token
-        });
-      });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
+export const toggleIncognito = async (req, res) => {
+  const user = await User.findByPk(req.userId);
+  if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+  if (user.rol !== "mixto") return res.status(403).json({ message: "Solo rol mixto" });
+  if (!user.is_premium) return res.status(402).json({ message: "Función premium" });
+  user.incognito_mode = !user.incognito_mode;
+  await user.save();
+  res.json({ incognito_mode: user.incognito_mode });
 };
