@@ -93,8 +93,16 @@ function updateBreadcrumb(tabName) {
   `;
 }
 
-function showTab(tabName) {
+function resolveAllowedTab(tabName) {
   const target = maybe(`tab-${tabName}`) ? tabName : 'home';
+  if (!me && ['lector', 'autor', 'mixto'].includes(target)) return 'asistente';
+  if (target === 'autor' && !isAutorRole()) return me ? 'lector' : 'asistente';
+  if (target === 'mixto' && !isMixtoPremium()) return me ? 'lector' : 'asistente';
+  return target;
+}
+
+function showTab(tabName) {
+  const target = resolveAllowedTab(tabName);
   document.querySelectorAll('.tab-section').forEach((section) => section.classList.add('d-none'));
   $(`tab-${target}`).classList.remove('d-none');
   document.querySelectorAll('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.tab === target));
@@ -109,14 +117,17 @@ function renderUI() {
   $('openRegisterBtn').classList.toggle('d-none', Boolean(me));
   $('openLoginBtn').classList.toggle('d-none', Boolean(me));
   $('logout').classList.toggle('d-none', !me);
-  $('navLector').classList.toggle('d-none', false);
+  $('navLector').classList.toggle('d-none', !me);
   $('navAutor').classList.toggle('d-none', !isAutorRole());
   $('navMixto').classList.toggle('d-none', !isMixtoPremium());
-  $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Inicia sesión para ver módulos por rol.';
+  $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
   $('authorCodePanel').classList.toggle('d-none', !isAutorRole());
   $('guestHelpPanel').classList.toggle('d-none', Boolean(isAutorRole()));
   const canUpgrade = Boolean(me && !isMixtoPremium());
   $('roleUpgradePanel').classList.toggle('d-none', !canUpgrade);
+  const activeSection = document.querySelector('.tab-section:not(.d-none)');
+  const activeTab = activeSection?.id?.replace('tab-', '');
+  if (activeTab && resolveAllowedTab(activeTab) !== activeTab) showTab(activeTab);
   if (canUpgrade) {
     const upgradingMixto = me.rol === 'mixto' && !me.is_premium;
     $('upgradeTitle').innerHTML = upgradingMixto
@@ -202,13 +213,29 @@ $('logout').onclick = () => {
   showSuccess('Sesión cerrada', 'Saliste correctamente de BookSocial.');
 };
 
+const buildBookSearchParams = (fields) => {
+  const params = new URLSearchParams();
+  Object.entries(fields).forEach(([key, id]) => {
+    const value = $(id).value.trim();
+    if (value) params.set(key, value);
+  });
+  return params;
+};
+
 $('buscar').onclick = async () => {
   try {
-    const q = encodeURIComponent($('searchQ').value || '');
-    const c = encodeURIComponent($('privateCode').value || '');
-    const path = token ? `/api/libros?q=${q}&codigo_privado=${c}` : `/api/libros-publicos?q=${q}`;
+    const params = buildBookSearchParams({
+      q: 'searchQ',
+      genero: 'searchGenre',
+      estado_obra: 'searchStatus',
+      audiencia_objetivo: 'searchAudience',
+      anio_publicacion: 'searchYear'
+    });
+    if (token && $('privateCode').value.trim()) params.set('codigo_privado', $('privateCode').value.trim());
+    params.set('source', 'home');
+    const path = token ? `/api/libros?${params}` : `/api/libros-publicos?${params}`;
     $('outLibros').textContent = JSON.stringify(await api(path, { auth: Boolean(token) }), null, 2);
-    showSuccess('Búsqueda completada', 'Los resultados se cargaron correctamente.');
+    showSuccess('Búsqueda completada', 'Los resultados se cargaron con filtros de navegación.');
   } catch (error) {
     handleError(error);
   }
@@ -559,7 +586,7 @@ const appAnswers = [
   { keys: ['codigo', 'captcha'], answer: 'Los códigos de registro, cambio de rol y premium se generan con captcha. Vencen en 10 minutos y pueden llegar por SMTP o mostrarse para pruebas si ADMIN_CODE_RESPONSE está activo.' },
   { keys: ['comunidad', 'moderacion', 'bloquear'], answer: 'En Mixto Premium puedes consultar analítica de comunidad y moderar miembros con estados activo, restringido o bloqueado desde el panel Mixto.' },
   { keys: ['libro', 'publicar'], answer: 'En el panel Autor puedes crear libros con título, año, derechos, género, etiquetas, audiencia, enlaces externos y visibilidad pública/privada/borrador. Las búsquedas y vistas alimentan book_events.' },
-  { keys: ['lector', 'enlaces', 'wattpad', 'ao3', 'fanfiction', 'webnovel', 'drive'], answer: 'El panel Lector permite buscar obras, usar código privado o beta, abrir enlaces Wattpad/AO3/FanFiction/Webnovel/Drive y dejar reseñas.' },
+  { keys: ['lector', 'enlaces', 'wattpad', 'ao3', 'fanfiction', 'webnovel', 'drive'], answer: 'El panel Lector permite buscar obras con filtros por género, estado, audiencia y año; si no tienes cuenta solo verás la aplicación IA / Chat desde la navegación de aplicaciones.' },
   { keys: ['tabla', 'tablas', 'registros'], answer: 'En Mixto Premium, abre Tablas usadas y pulsa Ver mis registros privados. Solo verás datos vinculados a tu cuenta; cada registro está oculto con ojito y al mostrar uno se oculta cualquier otro abierto.' },
   { keys: ['ataque', 'ataques', 'proteccion', 'proteger'], answer: 'Para proteger comunidades usa invitación privada, reglas claras y moderación Mixto Premium: activo, restringido o bloqueado. Las reseñas/eventos ayudan a detectar actividad dañina.' },
   { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' }
@@ -606,12 +633,19 @@ const formatBookList = (books) => books.map((book) => ({
 
 $('btnReaderSearch').onclick = async () => {
   try {
-    const q = encodeURIComponent($('readerSearchQ').value.trim());
-    const code = encodeURIComponent($('readerPrivateCode').value.trim());
-    const path = token ? `/api/libros?q=${q}&codigo_privado=${code}&source=lector` : `/api/libros-publicos?q=${q}&source=lector`;
+    const params = buildBookSearchParams({
+      q: 'readerSearchQ',
+      genero: 'readerGenre',
+      estado_obra: 'readerStatus',
+      audiencia_objetivo: 'readerAudience',
+      anio_publicacion: 'readerYear'
+    });
+    if ($('readerPrivateCode').value.trim()) params.set('codigo_privado', $('readerPrivateCode').value.trim());
+    params.set('source', 'lector');
+    const path = token ? `/api/libros?${params}` : `/api/libros-publicos?${params}`;
     const books = await api(path, { auth: Boolean(token) });
     showJson('lectorOut', formatBookList(books));
-    showSuccess('Obras encontradas', 'Revisa enlaces, reseñas y códigos beta si existen.');
+    showSuccess('Obras encontradas', 'Revisa enlaces, reseñas y filtros aplicados.');
   } catch (error) {
     handleError(error);
   }

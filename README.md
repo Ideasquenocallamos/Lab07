@@ -520,6 +520,7 @@ Las funciones premium están restringidas a usuarios con `rol=mixto` e `is_premi
 La interfaz está separada para no sobrecargar al usuario:
 
 - Barra superior con etiqueta visual de rol (`Visitante`, `lector`, `autor`, `mixto premium`).
+- Panel **Lector** visible solo cuando hay sesión iniciada; los visitantes sin cuenta no ven esta aplicación en la navegación secundaria.
 - Panel **Autor** visible solo para `autor`/`mixto`, con cards para crear libros, comunidades y publicaciones.
 - Panel **Mixto** visible solo para `mixto premium`, con cards para analítica, moderación y referencia de tablas usadas.
 - Panel **IA** con icono de robot y respuestas limitadas al aplicativo BookSocial: roles, códigos, libros, comunidades, analítica, moderación y despliegue.
@@ -530,14 +531,14 @@ La interfaz está separada para no sobrecargar al usuario:
 La navegación queda jerarquizada de lo general a lo específico:
 
 - **Principal:** Home y Acceso, siempre visibles.
-- **Secundaria:** módulos de aplicación según rol (`Autor`, `Mixto Premium`, `IA / Chat`).
+- **Secundaria:** módulos de aplicación según rol; sin cuenta solo queda visible `IA / Chat`, mientras que `Lector`, `Autor` y `Mixto Premium` se ocultan hasta iniciar sesión y cumplir el rol.
 - **Terciaria:** breadcrumb de ubicación con formato `BookSocial > Sección > Módulo` para saber dónde estás.
 
 Para Railway/Nixpacks se incluye `nixpacks.toml` con `npm install --omit=dev`; evita usar la variable antigua `NPM_CONFIG_PRODUCTION=true`, que genera el warning `npm warn config production Use --omit=dev instead`.
 
 ## 25) Panel Lector y enlaces de obras
 
-El panel **Lector** permite buscar obras públicas, privadas con código o borradores beta con código, guardar reseñas/comentarios y solicitar entrada a comunidades protegidas.
+El panel **Lector** permite buscar obras públicas, privadas con código o borradores beta con código, guardar reseñas/comentarios y solicitar entrada a comunidades protegidas. La búsqueda de Home y Lector incluye filtros por texto, género, estado de obra, audiencia objetivo y año de publicación.
 
 Campos adicionales de libro usados por la aplicación:
 

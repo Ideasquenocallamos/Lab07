@@ -72,14 +72,32 @@
           <small class="text-muted">Públicos para visitantes</small>
         </div>
         <div class="row g-2">
-          <div class="col-md-6">
-            <input id="searchQ" class="form-control" placeholder="Buscar por título">
-          </div>
           <div class="col-md-4">
-            <input id="privateCode" class="form-control" placeholder="Código privado (con sesión)">
+            <input id="searchQ" class="form-control" placeholder="Buscar por título, género o etiqueta">
           </div>
           <div class="col-md-2">
-            <button id="buscar" class="btn btn-primary w-100">Buscar</button>
+            <input id="searchGenre" class="form-control" placeholder="Género">
+          </div>
+          <div class="col-md-2">
+            <select id="searchStatus" class="form-select">
+              <option value="">Estado</option>
+              <option value="idea">Idea</option>
+              <option value="borrador">Borrador</option>
+              <option value="en_revision">En revisión</option>
+              <option value="publicada">Publicada</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <input id="searchAudience" class="form-control" placeholder="Audiencia">
+          </div>
+          <div class="col-md-2">
+            <input id="searchYear" class="form-control" inputmode="numeric" placeholder="Año">
+          </div>
+          <div class="col-md-8">
+            <input id="privateCode" class="form-control" placeholder="Código privado (solo con sesión)">
+          </div>
+          <div class="col-md-4">
+            <button id="buscar" class="btn btn-primary w-100">Buscar con filtros</button>
           </div>
         </div>
         <pre id="outLibros" class="mt-3 result-box"></pre>
@@ -179,8 +197,22 @@
           <h2 class="h6 mt-3">Buscar obras</h2>
           <p class="small text-muted">Usa título, código privado o beta para borradores de prueba.</p>
           <input id="readerSearchQ" class="form-control form-control-sm mb-2" placeholder="Título, saga o etiqueta">
+          <div class="row g-2 mb-2">
+            <div class="col-6"><input id="readerGenre" class="form-control form-control-sm" placeholder="Género"></div>
+            <div class="col-6">
+              <select id="readerStatus" class="form-select form-select-sm">
+                <option value="">Estado</option>
+                <option value="idea">Idea</option>
+                <option value="borrador">Borrador</option>
+                <option value="en_revision">En revisión</option>
+                <option value="publicada">Publicada</option>
+              </select>
+            </div>
+            <div class="col-6"><input id="readerAudience" class="form-control form-control-sm" placeholder="Audiencia"></div>
+            <div class="col-6"><input id="readerYear" class="form-control form-control-sm" inputmode="numeric" placeholder="Año"></div>
+          </div>
           <input id="readerPrivateCode" class="form-control form-control-sm mb-2" placeholder="Código privado/beta opcional">
-          <button id="btnReaderSearch" class="btn btn-sm btn-primary w-100">Buscar y ordenar</button>
+          <button id="btnReaderSearch" class="btn btn-sm btn-primary w-100">Buscar con filtros</button>
         </div>
         <div class="app-card module-card">
           <div class="module-icon text-bg-success"><i class="bi bi-link-45deg"></i></div>

@@ -2,6 +2,8 @@ import db from "../models/index.js";
 const Libro = db.libro;
 const Autor = db.autor;
 
+const Op = db.Sequelize.Op;
+
 const trackBookEvent = async ({ req, id_libro = null, event_type, source = null, query = null, metadata = null }) => {
   try {
     await db.bookEvent.create({
@@ -16,6 +18,32 @@ const trackBookEvent = async ({ req, id_libro = null, event_type, source = null,
     // La analítica no debe romper lectura/búsqueda de libros.
   }
 };
+
+const buildBookSearchWhere = (query, baseWhere = {}) => {
+  const { q, genero, estado_obra, audiencia_objetivo, anio_publicacion } = query;
+  const where = { ...baseWhere };
+  const like = (value) => ({ [Op.like]: `%${String(value).trim()}%` });
+  if (q?.trim()) {
+    where[Op.or] = [
+      { titulo: like(q) },
+      { genero: like(q) },
+      { etiquetas: like(q) },
+      { audiencia_objetivo: like(q) }
+    ];
+  }
+  if (genero?.trim()) where.genero = like(genero);
+  if (estado_obra?.trim()) where.estado_obra = estado_obra;
+  if (audiencia_objetivo?.trim()) where.audiencia_objetivo = like(audiencia_objetivo);
+  if (/^\d{1,4}$/.test(String(anio_publicacion || "").trim())) where.anio_publicacion = Number(anio_publicacion);
+  return where;
+};
+
+const searchMetadata = (query) => ({
+  genero: query.genero || null,
+  estado_obra: query.estado_obra || null,
+  audiencia_objetivo: query.audiencia_objetivo || null,
+  anio_publicacion: query.anio_publicacion || null
+});
 
 async function resolveAutorId(userId, requestedAutorId) {
   if (requestedAutorId) return requestedAutorId;
@@ -40,9 +68,8 @@ export const createLibro = async (req, res) => {
 
 export const getLibros = async (req, res) => {
   const { q, codigo_privado } = req.query;
-  const where = {};
-  if (q) where.titulo = { [db.Sequelize.Op.like]: `%${q}%` };
-  await trackBookEvent({ req, event_type: "busqueda", source: req.query.source || "app", query: q || "" });
+  const where = buildBookSearchWhere(req.query);
+  await trackBookEvent({ req, event_type: "busqueda", source: req.query.source || "app", query: q || "", metadata: searchMetadata(req.query) });
   const all = await Libro.findAll({ where, include: [{ model: Autor, attributes: ["id_autor", "nombre_autor"] }] });
   const visible = all.filter((l) => l.visibilidad === "publico" || (["privado", "borrador"].includes(l.visibilidad) && codigo_privado && [l.codigo_privado, l.beta_reader_code].includes(codigo_privado)));
   res.json(visible);
@@ -93,9 +120,8 @@ export const deleteLibro = async (req, res) => {
 
 export const getLibrosPublicos = async (req, res) => {
   const { q } = req.query;
-  const where = { visibilidad: "publico" };
-  if (q) where.titulo = { [db.Sequelize.Op.like]: `%${q}%` };
-  await trackBookEvent({ req, event_type: "busqueda", source: req.query.source || "publico", query: q || "" });
+  const where = buildBookSearchWhere(req.query, { visibilidad: "publico" });
+  await trackBookEvent({ req, event_type: "busqueda", source: req.query.source || "publico", query: q || "", metadata: searchMetadata(req.query) });
   const libros = await Libro.findAll({ where, include: [{ model: Autor, attributes: ["id_autor", "nombre_autor"] }] });
   res.json(libros);
 };
