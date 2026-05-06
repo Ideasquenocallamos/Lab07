@@ -1,38 +1,40 @@
-import dbConfig from "../config/db.config.js";
 import Sequelize from "sequelize";
-import roleModel from "./role.model.js";
-import userModel from "./user.model.js";
+import dbConfig from "../config/db.config.js";
 
-const sequelize = new Sequelize(
-  dbConfig.DB,
-  dbConfig.USER,
-  dbConfig.PASSWORD,
-  {
-    host: dbConfig.HOST,
-    dialect: dbConfig.dialect,
-    pool: {
-      max: dbConfig.pool.max,
-      min: dbConfig.pool.min,
-      acquire: dbConfig.pool.acquire,
-      idle: dbConfig.pool.idle
-    }
-  }
-);
+const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
+  host: dbConfig.HOST,
+  port: dbConfig.PORT,
+  dialect: dbConfig.dialect,
+  dialectOptions: dbConfig.dialectOptions,
+  pool: dbConfig.pool,
+  logging: false
+});
 
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.role = roleModel(sequelize, Sequelize);
-db.user = userModel(sequelize, Sequelize);
+db.user = (await import("./user.model.js")).default(sequelize, Sequelize);
+db.autor = (await import("./autor.model.js")).default(sequelize, Sequelize);
+db.libro = (await import("./libro.model.js")).default(sequelize, Sequelize);
+db.comunidad = (await import("./comunidad.model.js")).default(sequelize, Sequelize);
+db.sala = (await import("./sala.model.js")).default(sequelize, Sequelize);
+db.chat = (await import("./chat.model.js")).default(sequelize, Sequelize);
+db.member = (await import("./comunidad_member.model.js")).default(sequelize, Sequelize);
+db.salaMessage = (await import("./sala_message.model.js")).default(sequelize, Sequelize);
+db.post = (await import("./post.model.js")).default(sequelize, Sequelize);
+db.notification = (await import("./notification.model.js")).default(sequelize, Sequelize);
 
-db.role.belongsToMany(db.user, {
-  through: "user_roles"
-});
-db.user.belongsToMany(db.role, {
-  through: "user_roles"
-});
+db.user.hasOne(db.autor, { foreignKey: "user_id" });
+db.autor.belongsTo(db.user, { foreignKey: "user_id" });
 
-db.ROLES = ["user", "admin", "moderator"];
+db.autor.hasMany(db.libro, { foreignKey: "id_autor" });
+db.libro.belongsTo(db.autor, { foreignKey: "id_autor" });
+
+db.autor.hasMany(db.comunidad, { foreignKey: "id_autor" });
+db.comunidad.belongsTo(db.autor, { foreignKey: "id_autor" });
+
+db.comunidad.hasMany(db.sala, { foreignKey: "id_comunidad" });
+db.sala.belongsTo(db.comunidad, { foreignKey: "id_comunidad" });
 
 export default db;
