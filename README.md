@@ -545,3 +545,13 @@ Campos adicionales de libro usados por la aplicación:
 - Clasificación: `genero`, `etiquetas`, `audiencia_objetivo`, `estado_obra`.
 - Control beta: `beta_reader_code` para lectores prueba/tester de borradores.
 - Comunidad y protección: ingreso por invitación, estados de miembro activo/restringido/bloqueado y reseñas para detectar actividad dañina o ataques a obras.
+
+## 26) Vista expandible de tablas y registros
+
+En **Mixto Premium > Tablas usadas** el botón **Ver registros generales** abre una sección inferior expandible con conteos y registros recientes por tabla:
+
+- Usuarios, autores, libros, comunidades y miembros.
+- Posts, notificaciones, eventos de lectura/búsqueda/reseñas, salas y mensajes.
+- Cada tabla se muestra con `<details>` para expandir/contraer y evitar sobrecargar visualmente la página.
+
+El chatbot también responde sobre panel lector, enlaces, tablas, protección de comunidades, roles, premium, despliegue y códigos.

@@ -94,3 +94,46 @@ export const getCommunityAnalytics = async (req, res) => {
     publicaciones_recientes: posts.slice(0, 20)
   });
 };
+
+
+const tableRegistry = [
+  { key: 'users', label: 'Usuarios', model: 'user', order: 'id', attributes: ['id', 'nombre', 'email', 'rol', 'is_premium'] },
+  { key: 'autores', label: 'Autores', model: 'autor', order: 'id_autor' },
+  { key: 'libros', label: 'Libros', model: 'libro', order: 'id_libro' },
+  { key: 'comunidades', label: 'Comunidades', model: 'comunidad', order: 'id_comunidad' },
+  { key: 'miembros', label: 'Miembros comunidad', model: 'member', order: 'id_member' },
+  { key: 'posts', label: 'Publicaciones', model: 'post', order: 'id_post' },
+  { key: 'notificaciones', label: 'Notificaciones', model: 'notification', order: 'id_notification' },
+  { key: 'eventos', label: 'Eventos de libros', model: 'bookEvent', order: 'id_event' },
+  { key: 'salas', label: 'Salas', model: 'sala', order: 'id_sala' },
+  { key: 'mensajes_sala', label: 'Mensajes sala', model: 'salaMessage', order: 'id_msg' }
+];
+
+const safeCount = async (model) => {
+  try { return await model.count(); } catch { return 0; }
+};
+
+const safeRows = async ({ model, order, attributes }) => {
+  try {
+    return await model.findAll({
+      attributes,
+      order: [[order, 'DESC']],
+      limit: 8
+    });
+  } catch {
+    return [];
+  }
+};
+
+export const getTablesOverview = async (req, res) => {
+  const tables = await Promise.all(tableRegistry.map(async (table) => {
+    const model = db[table.model];
+    if (!model) return { key: table.key, label: table.label, count: 0, rows: [] };
+    const [count, rows] = await Promise.all([
+      safeCount(model),
+      safeRows({ model, order: table.order, attributes: table.attributes })
+    ]);
+    return { key: table.key, label: table.label, count, rows };
+  }));
+  res.json({ generated_at: new Date().toISOString(), tables });
+};

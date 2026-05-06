@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createPost, getCommunityAnalytics, getFeed, getNotifications, getSalaMessages, joinComunidad, moderateMember, sendSalaMessage } from "../controllers/social.controller.js";
+import { createPost, getCommunityAnalytics, getFeed, getNotifications, getSalaMessages, getTablesOverview, joinComunidad, moderateMember, sendSalaMessage } from "../controllers/social.controller.js";
 import { isMixtoPremium, verifyToken } from "../middlewares/authJwt.js";
 import { requireFields } from "../middlewares/validate.js";
 
@@ -11,5 +11,6 @@ router.post('/api/feed/post', verifyToken, requireFields(['texto']), createPost)
 router.get('/api/feed', verifyToken, getFeed);
 router.get('/api/notifications', verifyToken, getNotifications);
 router.get('/api/comunidades/:idComunidad/analytics', verifyToken, isMixtoPremium, getCommunityAnalytics);
+router.get('/api/admin/tables-overview', verifyToken, isMixtoPremium, getTablesOverview);
 router.post('/api/comunidades/members/moderate', verifyToken, isMixtoPremium, requireFields(['id_comunidad', 'user_id']), moderateMember);
 export default router;

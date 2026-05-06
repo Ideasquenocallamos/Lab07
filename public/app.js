@@ -406,6 +406,35 @@ $('btnCreatePost').onclick = async () => {
   }
 };
 
+const compactValue = (value) => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const renderTablesOverview = (payload) => {
+  $('tablesGeneratedAt').textContent = payload.generated_at ? new Date(payload.generated_at).toLocaleString() : 'Actualizado';
+  $('tablesOverviewContent').innerHTML = payload.tables.map((table) => {
+    const rows = table.rows || [];
+    const columns = [...new Set(rows.flatMap((row) => Object.keys(row).slice(0, 6)))];
+    const body = rows.length
+      ? rows.map((row) => `<tr>${columns.map((column) => `<td>${compactValue(row[column]).slice(0, 80)}</td>`).join('')}</tr>`).join('')
+      : `<tr><td class="text-muted">Sin registros recientes</td></tr>`;
+    const header = columns.length ? columns.map((column) => `<th>${column}</th>`).join('') : '<th>Estado</th>';
+    return `
+      <details class="table-detail" ${table.count ? 'open' : ''}>
+        <summary><span>${table.label}</span><span class="badge text-bg-primary">${table.count}</span></summary>
+        <div class="table-responsive mt-2">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr>${header}</tr></thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+      </details>
+    `;
+  }).join('');
+};
+
 $('btnMixAnalytics').onclick = async () => {
   try {
     const id = $('mixAnalyticsCommunityId').value.trim();
@@ -437,12 +466,27 @@ $('btnModerateMember').onclick = async () => {
   }
 };
 
+
+$('btnTablesOverview').onclick = async () => {
+  try {
+    const data = await api('/api/admin/tables-overview', { auth: true });
+    renderTablesOverview(data);
+    showJson('mixtoOut', { resumen_tablas: data.tables.map((table) => ({ tabla: table.key, registros: table.count })) });
+    showSuccess('Tablas cargadas', 'La vista inferior muestra registros generales por tabla.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 const appAnswers = [
   { keys: ['autor', 'cambiar', 'rol'], answer: 'Para cambiar a Autor: inicia sesión, abre Acceso, genera captcha en Cambiar rol, pulsa Generar códigos, pega el código admin y confirma Cambiar rol.' },
   { keys: ['mixto', 'premium'], answer: 'Mixto Premium conserva lectura y autor, añade analítica, moderación, gráfica de búsquedas/vistas y gestión avanzada de comunidades. Requiere código admin y código premium generado con captcha.' },
   { keys: ['codigo', 'captcha'], answer: 'Los códigos de registro, cambio de rol y premium se generan con captcha. Vencen en 10 minutos y pueden llegar por SMTP o mostrarse para pruebas si ADMIN_CODE_RESPONSE está activo.' },
   { keys: ['comunidad', 'moderacion', 'bloquear'], answer: 'En Mixto Premium puedes consultar analítica de comunidad y moderar miembros con estados activo, restringido o bloqueado desde el panel Mixto.' },
-  { keys: ['libro', 'publicar'], answer: 'En el panel Autor puedes crear libros con título, año, derechos y visibilidad pública, privada o borrador. Las búsquedas y vistas alimentan book_events.' },
+  { keys: ['libro', 'publicar'], answer: 'En el panel Autor puedes crear libros con título, año, derechos, género, etiquetas, audiencia, enlaces externos y visibilidad pública/privada/borrador. Las búsquedas y vistas alimentan book_events.' },
+  { keys: ['lector', 'enlaces', 'wattpad', 'ao3', 'fanfiction', 'webnovel', 'drive'], answer: 'El panel Lector permite buscar obras, usar código privado o beta, abrir enlaces Wattpad/AO3/FanFiction/Webnovel/Drive y dejar reseñas.' },
+  { keys: ['tabla', 'tablas', 'registros'], answer: 'En Mixto Premium, abre Tablas usadas y pulsa Ver registros generales. Verás conteos y registros recientes de users, autores, libros, comunidades, miembros, posts, notificaciones y eventos.' },
+  { keys: ['ataque', 'ataques', 'proteccion', 'proteger'], answer: 'Para proteger comunidades usa invitación privada, reglas claras y moderación Mixto Premium: activo, restringido o bloqueado. Las reseñas/eventos ayudan a detectar actividad dañina.' },
   { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' }
 ];
 
@@ -451,7 +495,7 @@ const answerBookSocialQuestion = (question) => {
   if (!clean.trim()) return 'Escribe una pregunta relacionada con BookSocial.';
   const hit = appAnswers.find((item) => item.keys.some((key) => clean.includes(key)));
   if (hit) return hit.answer;
-  return 'Solo puedo ayudar con este aplicativo BookSocial: acceso, roles, autor, mixto premium, libros, comunidades, analítica, moderación, códigos, captcha o despliegue.';
+  return 'Solo puedo ayudar con este aplicativo BookSocial: acceso, roles, lector, autor, mixto premium, libros, enlaces, comunidades, tablas, analítica, moderación, códigos, captcha o despliegue.';
 };
 
 $('btnAskAi').onclick = () => {

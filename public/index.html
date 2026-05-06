@@ -305,14 +305,29 @@
         <div class="app-card module-card info-card">
           <div class="module-icon text-bg-secondary"><i class="bi bi-table"></i></div>
           <h2 class="h6 mt-3">Tablas usadas</h2>
-          <ul class="small text-muted mb-0">
+          <ul class="small text-muted mb-3">
             <li>users, autores, libros</li>
             <li>comunidades, comunidad_members</li>
             <li>posts, notifications, book_events</li>
           </ul>
+          <button id="btnTablesOverview" class="btn btn-sm btn-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#tablesOverviewPanel">
+            Ver registros generales
+          </button>
         </div>
       </div>
       <pre id="mixtoOut" class="mt-3 result-box compact-result"></pre>
+      <div id="tablesOverviewPanel" class="collapse mt-3">
+        <div class="app-card table-overview-card">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+              <h2 class="h6 mb-1"><i class="bi bi-table me-1"></i>Registros generales por tabla</h2>
+              <p class="small text-muted mb-0">Vista resumida para verificar datos sin salir del panel Mixto Premium.</p>
+            </div>
+            <span id="tablesGeneratedAt" class="badge text-bg-light">Sin cargar</span>
+          </div>
+          <div id="tablesOverviewContent" class="tables-overview-grid"></div>
+        </div>
+      </div>
     </section>
 
     <section id="tab-asistente" class="tab-section d-none">
@@ -326,6 +341,9 @@
               <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo cambio de lector a autor?">Cambio a autor</button>
               <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Qué incluye mixto premium?">Mixto premium</button>
               <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo uso comunidades y moderación?">Comunidades</button>
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo funciona el panel lector y los enlaces?">Panel lector</button>
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Qué tablas usa el aplicativo?">Tablas</button>
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo protejo una comunidad contra ataques?">Protección</button>
             </div>
           </div>
         </div>
