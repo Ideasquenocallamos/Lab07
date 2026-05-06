@@ -11,6 +11,21 @@ const flash = (message, ok = true) => {
   alert.textContent = message;
   alert.classList.remove('d-none');
 };
+const showSuccess = (title, message = 'La acción se realizó correctamente.') => {
+  $('successModalTitle').textContent = title;
+  $('successModalMessage').textContent = message;
+  bootstrap.Modal.getOrCreateInstance($('successModal')).show();
+};
+const showWarning = (title, message = 'Hubo un problema al realizar la acción.') => {
+  $('warningModalTitle').textContent = title;
+  $('warningModalMessage').textContent = message;
+  bootstrap.Modal.getOrCreateInstance($('warningModal')).show();
+};
+const handleError = (error) => {
+  const message = error?.message || 'Proceso interrumpido o no completado.';
+  flash(message, false);
+  showWarning('Proceso no completado', message);
+};
 const closeModal = (id) => bootstrap.Modal.getInstance($(id))?.hide();
 
 async function api(path, { method = 'GET', body, auth = false } = {}) {
@@ -18,11 +33,16 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   if (auth && !token) throw new Error('Debes iniciar sesión');
   if (auth) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined
-  });
+  let response;
+  try {
+    response = await fetch(`${API}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch {
+    throw new Error('No se pudo conectar con el servidor. Revisa internet o intenta nuevamente.');
+  }
   const data = await response.json();
 
   if (!response.ok) {
@@ -82,10 +102,10 @@ $('signup').onclick = async () => {
         admin_code: $('regAdminCode').value
       }
     });
-    flash('Registro completado. Ahora inicia sesión.');
+    showSuccess('Registro completado', 'Tu cuenta fue creada. Ahora inicia sesión con tu Gmail.');
     closeModal('registerModal');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
@@ -100,10 +120,10 @@ $('signin').onclick = async () => {
     localStorage.setItem('token', token);
     localStorage.setItem('me', JSON.stringify(me));
     renderUI();
-    flash('Sesión iniciada correctamente.');
+    showSuccess('Sesión iniciada', `Bienvenido, ${me.nombre}.`);
     closeModal('loginModal');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
@@ -112,7 +132,7 @@ $('logout').onclick = () => {
   me = null;
   localStorage.clear();
   renderUI();
-  flash('Sesión cerrada.');
+  showSuccess('Sesión cerrada', 'Saliste correctamente de BookSocial.');
 };
 
 $('buscar').onclick = async () => {
@@ -121,8 +141,9 @@ $('buscar').onclick = async () => {
     const c = encodeURIComponent($('privateCode').value || '');
     const path = token ? `/api/libros?q=${q}&codigo_privado=${c}` : `/api/libros-publicos?q=${q}`;
     $('outLibros').textContent = JSON.stringify(await api(path, { auth: Boolean(token) }), null, 2);
+    showSuccess('Búsqueda completada', 'Los resultados se cargaron correctamente.');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
@@ -131,24 +152,25 @@ $('btnLoadCaptcha').onclick = async () => {
     const captcha = await api('/api/auth/captcha');
     captchaId = captcha.captcha_id;
     $('captchaImg').src = captcha.image_base64;
-    flash('Captcha generado. Tienes 2 minutos para validarlo.');
+    showSuccess('Captcha generado', 'Tienes 2 minutos para escribir el código de la imagen.');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
 $('btnCaptcha').onclick = async () => {
   try {
-    if (!me) return flash('Primero inicia sesión para validar el captcha.', false);
-    if (!captchaId) return flash('Genera captcha primero.', false);
+    if (!me) return handleError(new Error('Primero inicia sesión para validar el captcha.'));
+    if (!captchaId) return handleError(new Error('Genera captcha primero.'));
     const result = await api('/api/auth/author-code', {
       method: 'POST',
       auth: true,
       body: { captcha_id: captchaId, answer: $('captchaAnswer').value }
     });
     $('authorCodeBox').innerHTML = `<span class="badge text-bg-dark">Código autor: ${result.author_code}</span>`;
+    showSuccess('Código de autor validado', 'Tu código de autor se mostró correctamente.');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
@@ -158,14 +180,15 @@ $('btnRegCaptcha').onclick = async () => {
     regCaptchaId = captcha.captcha_id;
     $('regCaptchaImg').src = captcha.image_base64;
     $('adminRequestResult').textContent = 'Captcha listo. Escríbelo y solicita el código.';
+    showSuccess('Captcha de registro generado', 'Escribe el código de la imagen para solicitar el código admin.');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
 $('btnRequestAdminCode').onclick = async () => {
   try {
-    if (!regCaptchaId) return flash('Genera captcha de registro primero.', false);
+    if (!regCaptchaId) return handleError(new Error('Genera captcha de registro primero.'));
     const result = await api('/api/auth/request-admin-code', {
       method: 'POST',
       body: {
@@ -176,9 +199,10 @@ $('btnRequestAdminCode').onclick = async () => {
       }
     });
     $('adminRequestResult').innerHTML = `Solicitud lista para enviar a <b>${result.admin_email}</b>. <a href="${result.gmail_url}" target="_blank" rel="noreferrer">Abrir Gmail</a>`;
+    showSuccess('Solicitud preparada', 'Se abrirá Gmail para enviar la solicitud al administrador.');
     window.open(result.gmail_url, '_blank', 'noreferrer');
   } catch (error) {
-    flash(error.message, false);
+    handleError(error);
   }
 };
 
