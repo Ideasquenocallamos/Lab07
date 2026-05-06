@@ -2,39 +2,45 @@ import express from "express";
 import cors from "cors";
 import db from "./app/models/index.js";
 import authRoutes from "./app/routes/auth.routes.js";
-import userRoutes from "./app/routes/user.routes.js";
+import autorRoutes from "./app/routes/autor.routes.js";
+import libroRoutes from "./app/routes/libro.routes.js";
+import chatRoutes from "./app/routes/chat.routes.js";
+import comunidadRoutes from "./app/routes/comunidad.routes.js";
+import salaRoutes from "./app/routes/sala.routes.js";
+import socialRoutes from "./app/routes/social.routes.js";
 
 const app = express();
-
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use("/uploads", express.static("app/uploads"));
 
 app.use(authRoutes);
-app.use(userRoutes);
+app.use(autorRoutes);
+app.use(libroRoutes);
+app.use(chatRoutes);
+app.use(comunidadRoutes);
+app.use(salaRoutes);
+app.use(socialRoutes);
 
-app.get("/", (req, res) => {
-  res.json({ message: "Bienvenido al laboratorio JWT" });
+app.get("/api/health", async (req, res) => {
+  try {
+    await db.sequelize.authenticate();
+    res.json({ status: "ok", db: "connected" });
+  } catch {
+    res.status(503).json({ status: "degraded", db: "disconnected" });
+  }
 });
 
-function inicializarRoles() {
-  const Role = db.role;
-  Role.create({ id: 1, name: "user" });
-  Role.create({ id: 2, name: "moderator" });
-  Role.create({ id: 3, name: "admin" });
-}
-
-db.sequelize
-  .sync({ force: true })
-  .then(() => {
-    console.log("Base de datos sincronizada");
-    inicializarRoles();
-    console.log("Roles creados: user, moderator, admin");
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      console.log(`Servidor corriendo en el puerto ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Error al sincronizar la base de datos:", err);
-  });
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+  console.log(`Servidor en puerto ${PORT}`);
+  try {
+    const syncAlter = (process.env.DB_SYNC_ALTER || "true").toLowerCase() === "true";
+    await db.sequelize.sync({ alter: syncAlter });
+    console.log(`Base de datos sincronizada${syncAlter ? " con alter" : ""}`);
+  } catch (error) {
+    console.error("No se pudo sincronizar DB al iniciar:", error.message);
+  }
+});
