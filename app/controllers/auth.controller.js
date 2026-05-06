@@ -2,13 +2,50 @@ import db from "../models/index.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import config from "../config/auth.config.js";
+import { sendMail } from "../utils/mailer.js";
 
 const User = db.user;
 const captchaStore = new Map();
+const adminCodeStore = new Map();
 const genCode = () => `AUT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+const genAdminCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const adminCodeKey = (email, rol) => `${String(email || "").trim().toLowerCase()}:${rol}`;
+const ADMIN_CODE_TTL_MS = 10 * 60 * 1000;
 
 const isDbConnectionError = (error) =>
   ["SequelizeConnectionError", "SequelizeConnectionRefusedError", "SequelizeHostNotFoundError", "SequelizeAccessDeniedError"].includes(error.name);
+
+
+const validateAdminRegisterCode = (email, rol, code) => {
+  const cleanCode = String(code || "").trim();
+  const fixedCode = process.env.ADMIN_REGISTER_CODE;
+  if (fixedCode && cleanCode === fixedCode) return true;
+
+  const key = adminCodeKey(email, rol);
+  const stored = adminCodeStore.get(key);
+  if (!stored || Date.now() > stored.expiresAt) {
+    adminCodeStore.delete(key);
+    return false;
+  }
+  if (stored.code !== cleanCode) return false;
+  adminCodeStore.delete(key);
+  return true;
+};
+
+const buildAdminCodeEmail = ({ code, rol, email, adminEmail }) => {
+  const expiresMinutes = Math.floor(ADMIN_CODE_TTL_MS / 60000);
+  const text = `Hola,
+
+Tu código automático de registro BookSocial para el rol ${rol} es: ${code}
+
+Correo solicitante: ${email}
+Administrador de contacto: ${adminEmail}
+Vence en ${expiresMinutes} minutos. Si no solicitaste este código, ignora este mensaje.
+
+BookSocial`;
+  const html = `<p>Hola,</p><p>Tu código automático de registro BookSocial para el rol <b>${rol}</b> es:</p><h2 style="letter-spacing:4px">${code}</h2><p><b>Correo solicitante:</b> ${email}<br><b>Administrador de contacto:</b> ${adminEmail}<br><b>Vence en:</b> ${expiresMinutes} minutos</p><p>Si no solicitaste este código, ignora este mensaje.</p><p>BookSocial</p>`;
+  return { text, html };
+};
 
 const dbErrorMessage = (error) => {
   if (isDbConnectionError(error)) {
@@ -53,20 +90,35 @@ export const requestAdminCode = async (req, res) => {
   }
   captchaStore.delete(captcha_id);
 
-  const adminEmail = process.env.ADMIN_EMAIL || "admin.autor@lab07.com";
-  const subject = encodeURIComponent(`Solicitud de código admin para rol ${rol}`);
-  const body = encodeURIComponent(`Hola administrador, solicito el código de registro para rol ${rol}.
-Correo Gmail solicitante: ${cleanEmail}
+  const adminEmail = process.env.ADMIN_EMAIL || "andersson.guevara.b@tecsup.edu.pe";
+  const code = genAdminCode();
+  adminCodeStore.set(adminCodeKey(cleanEmail, rol), { code, expiresAt: Date.now() + ADMIN_CODE_TTL_MS });
 
-Por favor responder a este correo con el código autorizado.`);
-  const mailto_url = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
-  const gmail_url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(adminEmail)}&su=${subject}&body=${body}`;
+  const { text, html } = buildAdminCodeEmail({ code, rol, email: cleanEmail, adminEmail });
+  let mailResult;
+  try {
+    mailResult = await sendMail({
+      to: cleanEmail,
+      cc: [adminEmail],
+      subject: `Código automático BookSocial para registro ${rol}`,
+      text,
+      html,
+      replyTo: adminEmail
+    });
+  } catch (error) {
+    mailResult = { sent: false, reason: error.message };
+  }
 
+  const includeCode = process.env.ADMIN_CODE_RESPONSE !== "false" || !mailResult.sent;
   res.json({
-    message: "Solicitud validada. Envía este correo al administrador desde Gmail para recibir el código en tu correo.",
+    message: mailResult.sent
+      ? "Código automático enviado a tu Gmail. Revisa tu bandeja de entrada o spam y pégalo para registrarte."
+      : "Código automático generado. Configura SMTP_HOST/SMTP_USER/SMTP_PASS para enviarlo por correo; mientras tanto se muestra en pantalla.",
     admin_email: adminEmail,
-    gmail_url,
-    mailto_url
+    email_sent: mailResult.sent,
+    mail_status: mailResult.reason || "sent",
+    expires_in_minutes: Math.floor(ADMIN_CODE_TTL_MS / 60000),
+    ...(includeCode ? { admin_code: code } : {})
   });
 };
 
@@ -98,8 +150,8 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Por ahora solo se permite registro con correo Gmail" });
     }
     const targetRole = ["autor", "lector", "mixto"].includes(rol) ? rol : "lector";
-    if (["autor", "mixto"].includes(targetRole) && admin_code !== (process.env.ADMIN_REGISTER_CODE || "LAB07_ADMIN")) {
-      return res.status(403).json({ message: "Código admin inválido para rol autor/mixto" });
+    if (["autor", "mixto"].includes(targetRole) && !validateAdminRegisterCode(cleanEmail, targetRole, admin_code)) {
+      return res.status(403).json({ message: "Código admin inválido o expirado. Solicita un código automático nuevo para autor/mixto." });
     }
     const user = await User.create({
       nombre: cleanNombre,

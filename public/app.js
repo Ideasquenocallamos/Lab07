@@ -81,7 +81,7 @@ function updateRoleUI() {
   $('regAdminCode').style.opacity = needsAdminCode ? '1' : '0.6';
   $('adminCodeRequestBox').classList.toggle('d-none', !needsAdminCode);
   $('adminHelp').textContent = needsAdminCode
-    ? 'Solicita el código al administrador y pégalo aquí cuando te responda por Gmail.'
+    ? 'Pulsa Recibir código para generar un código automático y pégalo aquí.'
     : 'Para lector no necesitas código admin.';
 }
 
@@ -188,8 +188,8 @@ $('btnRegCaptcha').onclick = async () => {
     const captcha = await api('/api/auth/captcha');
     regCaptchaId = captcha.captcha_id;
     $('regCaptchaImg').src = captcha.image_base64;
-    $('adminRequestResult').textContent = 'Captcha listo. Escríbelo y solicita el código.';
-    showSuccess('Captcha de registro generado', 'Escribe el código de la imagen para solicitar el código admin.');
+    $('adminRequestResult').textContent = 'Captcha listo. Escríbelo y pulsa Recibir código.';
+    showSuccess('Captcha de registro generado', 'Escribe el código de la imagen para recibir el código automático.');
   } catch (error) {
     handleError(error);
   }
@@ -209,9 +209,11 @@ $('btnRequestAdminCode').onclick = async () => {
         answer: $('regCaptchaAnswer').value
       }
     });
-    $('adminRequestResult').innerHTML = `Solicitud lista para enviar a <b>${result.admin_email}</b>. <a href="${result.gmail_url}" target="_blank" rel="noreferrer">Abrir Gmail</a>`;
-    showSuccess('Solicitud preparada', 'Se abrirá Gmail para enviar la solicitud al administrador.');
-    window.open(result.gmail_url, '_blank', 'noreferrer');
+    if (result.admin_code) {
+      $('regAdminCode').value = result.admin_code;
+    }
+    $('adminRequestResult').innerHTML = `${result.message}<br><b>Admin:</b> ${result.admin_email}${result.admin_code ? `<br><b>Código:</b> ${result.admin_code}` : ''}`;
+    showSuccess('Código automático listo', result.email_sent ? 'Revisa tu Gmail y pega el código recibido.' : 'El código se generó y se copió al campo de registro.');
   } catch (error) {
     handleError(error);
   }

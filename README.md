@@ -394,17 +394,19 @@ Respuesta esperada:
 
 - `rol=autor`: panel administrativo (crear/editar/eliminar autores y libros).
 - `rol=lector`: panel cliente (solo ver contenido).
+- `rol=mixto`: puede leer y gestionar contenido como autor.
 
-Para crear cuenta `autor` en signup debes enviar:
-- `rol: "autor"`
-- `admin_code: "LAB07_ADMIN"` (o valor de `ADMIN_REGISTER_CODE`)
+Para crear cuenta `autor` o `mixto` en signup debes enviar un `admin_code` vigente. Ese código se genera automáticamente desde `POST /api/auth/request-admin-code`, vence en 10 minutos y se consume al registrarte.
 
-Correo sugerido para admin:
-- `admin.autor@lab07.com`
+Contacto real del administrador:
+- `andersson.guevara.b@tecsup.edu.pe`
 
 Variables recomendadas:
 ```env
-ADMIN_REGISTER_CODE=LAB07_ADMIN
+ADMIN_EMAIL=andersson.guevara.b@tecsup.edu.pe
+ADMIN_CODE_RESPONSE=true
+# Opcional: código fijo de emergencia, no recomendado para producción
+# ADMIN_REGISTER_CODE=LAB07_ADMIN
 ```
 
 
@@ -430,24 +432,30 @@ Además, el libro incluye `link_lectura` para redirigir al panel cliente (estilo
 - Campos nuevos de libro: `etiquetas`, `comentarios_resenas`, `link_lectura`.
 
 
-## 20) Solicitud de código admin por Gmail
+## 20) Código automático para registro autor/mixto por Gmail
 
 Para registrar una cuenta con rol `autor` o `mixto`:
 
 1. Abre **Acceso** > **Registrarse**.
 2. Selecciona rol `Autor` o `Mixto`.
 3. Escribe tu correo Gmail.
-4. Presiona **Generar captcha** en el bloque “Solicitar código admin por Gmail”.
+4. Presiona **Generar captcha** en el bloque “Recibir código admin por Gmail”.
 5. Copia manualmente el texto de la imagen captcha.
-6. Presiona **Solicitar código**.
-7. La app abre Gmail con un correo dirigido a `ADMIN_EMAIL` para que el administrador responda con el código de registro.
-8. Cuando recibas el código por Gmail, pégalo en “Código admin recibido por Gmail” y completa el registro.
+6. Presiona **Recibir código**.
+7. La app genera un código de 6 dígitos, lo guarda por 10 minutos y envía automáticamente un correo al Gmail solicitante con copia al administrador `andersson.guevara.b@tecsup.edu.pe`.
+8. Pega el código recibido en “Código admin recibido por Gmail” y completa el registro.
 
-Variables relacionadas:
+Variables relacionadas para envío automático por SMTP:
 
 ```env
-ADMIN_EMAIL=admin.autor@lab07.com
-ADMIN_REGISTER_CODE=LAB07_ADMIN
+ADMIN_EMAIL=andersson.guevara.b@tecsup.edu.pe
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=tu_correo@gmail.com
+SMTP_PASS=tu_password_de_aplicacion
+MAIL_FROM=tu_correo@gmail.com
+ADMIN_CODE_RESPONSE=true
 ```
 
-> Nota: sin un servicio SMTP externo, la app abre una URL de composición de Gmail para que el usuario envíe manualmente la solicitud al administrador.
+> Si SMTP no está configurado, la app sigue generando el código y lo muestra/autocompleta para pruebas rápidas. En producción configura SMTP y usa `ADMIN_CODE_RESPONSE=false` si quieres que el código solo llegue por correo.

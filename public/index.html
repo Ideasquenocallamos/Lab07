@@ -106,7 +106,7 @@
         <div class="modal-header">
           <div>
             <h5 class="modal-title">Crear cuenta</h5>
-            <small class="text-muted">Usa tu correo Gmail.</small>
+            <small class="text-muted">Usa tu correo Gmail. Autor/mixto reciben código automático.</small>
           </div>
           <button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
@@ -123,13 +123,13 @@
           <small id="adminHelp" class="text-muted d-block mt-1">Para lector no necesitas código admin.</small>
 
           <div id="adminCodeRequestBox" class="admin-request-box mt-3 d-none">
-            <div class="fw-semibold mb-1"><i class="bi bi-envelope-at me-1"></i>Solicitar código admin por Gmail</div>
-            <p class="text-muted small mb-2">Genera el captcha, escríbelo manualmente y se abrirá Gmail para pedir el código al administrador.</p>
+            <div class="fw-semibold mb-1"><i class="bi bi-envelope-at me-1"></i>Recibir código admin por Gmail</div>
+            <p class="text-muted small mb-2">Genera el captcha y recibe un código automático de registro. Contacto admin: andersson.guevara.b@tecsup.edu.pe.</p>
             <div class="d-flex gap-2 align-items-center flex-wrap">
               <button id="btnRegCaptcha" type="button" class="btn btn-sm btn-warning">Generar captcha</button>
               <img id="regCaptchaImg" class="captcha-img small-captcha" alt="captcha registro" />
               <input id="regCaptchaAnswer" class="form-control form-control-sm captcha-input" placeholder="Captcha">
-              <button id="btnRequestAdminCode" type="button" class="btn btn-sm btn-outline-primary">Solicitar código</button>
+              <button id="btnRequestAdminCode" type="button" class="btn btn-sm btn-outline-primary">Recibir código</button>
             </div>
             <div id="adminRequestResult" class="small mt-2"></div>
           </div>
