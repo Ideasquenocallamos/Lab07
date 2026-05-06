@@ -1,78 +1,20 @@
 import jwt from "jsonwebtoken";
-import authConfig from "../config/auth.config.js";
+import config from "../config/auth.config.js";
 import db from "../models/index.js";
 
-const User = db.user;
-const Role = db.role;
-
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(403).json({ message: "No se proporcionó token" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(403).json({ message: "Formato de token inválido" });
-  }
-
-  jwt.verify(token, authConfig.secret, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Token no válido o expirado" });
-    }
-    req.userId = decoded.id;
-    next();
+export const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization || "";
+  const token = req.headers["x-access-token"] || authHeader.replace(/^Bearer\s+/i, "");
+  if (!token) return res.status(403).json({ message: "Token requerido" });
+  jwt.verify(token, config.secret, (err, decoded) => {
+    if (err) return res.status(401).json({ message: "Token inválido" });
+    req.userId = decoded.id; req.userRole = decoded.rol; next();
   });
 };
 
-const isAdmin = (req, res, next) => {
-  User.findByPk(req.userId).then((user) => {
-    user.getRoles().then((roles) => {
-      const hasRole = roles.some((role) => role.name === "admin");
-      if (hasRole) {
-        next();
-      } else {
-        res.status(403).json({ message: "Se requiere rol de administrador" });
-      }
-    });
-  });
+export const isAutor = async (req, res, next) => {
+  if (["autor", "mixto"].includes(req.userRole)) return next();
+  const user = await db.user.findByPk(req.userId);
+  if (!user || !["autor", "mixto"].includes(user.rol)) return res.status(403).json({ message: "Solo autores administradores" });
+  next();
 };
-
-const isModerator = (req, res, next) => {
-  User.findByPk(req.userId).then((user) => {
-    user.getRoles().then((roles) => {
-      const hasRole = roles.some((role) => role.name === "moderator");
-      if (hasRole) {
-        next();
-      } else {
-        res.status(403).json({ message: "Se requiere rol de moderador" });
-      }
-    });
-  });
-};
-
-const isModeratorOrAdmin = (req, res, next) => {
-  User.findByPk(req.userId).then((user) => {
-    user.getRoles().then((roles) => {
-      const hasRole = roles.some(
-        (role) => role.name === "moderator" || role.name === "admin"
-      );
-      if (hasRole) {
-        next();
-      } else {
-        res.status(403).json({ message: "Se requiere rol de moderador o administrador" });
-      }
-    });
-  });
-};
-
-const authJwt = {
-  verifyToken,
-  isAdmin,
-  isModerator,
-  isModeratorOrAdmin
-};
-
-export default authJwt;
