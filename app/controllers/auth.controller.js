@@ -19,10 +19,10 @@ const isDbConnectionError = (error) =>
   ["SequelizeConnectionError", "SequelizeConnectionRefusedError", "SequelizeHostNotFoundError", "SequelizeAccessDeniedError"].includes(error.name);
 
 
-const assertValidRoleChange = (currentRole, targetRole) => {
+const assertValidRoleChange = (currentRole, targetRole, isPremium = false) => {
   if (!["autor", "mixto"].includes(targetRole)) return "Solo puedes cambiar a autor o mixto";
-  if (currentRole === targetRole) return "Tu cuenta ya tiene ese rol";
-  if (currentRole === "mixto") return "La cuenta mixta ya conserva lector y autor; no requiere más cambios";
+  if (currentRole === targetRole && !(targetRole === "mixto" && !isPremium)) return "Tu cuenta ya tiene ese rol";
+  if (currentRole === "mixto" && targetRole !== "mixto") return "La cuenta mixta ya conserva lector y autor; no requiere más cambios";
   return null;
 };
 
@@ -180,7 +180,7 @@ export const requestRoleChangeCode = async (req, res) => {
     const user = await User.findByPk(req.userId);
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    const roleError = assertValidRoleChange(user.rol, targetRole);
+    const roleError = assertValidRoleChange(user.rol, targetRole, user.is_premium);
     if (roleError) return res.status(400).json({ message: roleError });
     if (!validateCaptchaAnswer(captcha_id, answer)) {
       return res.status(400).json({ message: "Captcha inválido o expirado" });
@@ -279,7 +279,7 @@ export const changeRole = async (req, res) => {
     const user = await User.findByPk(req.userId);
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    const roleError = assertValidRoleChange(user.rol, targetRole);
+    const roleError = assertValidRoleChange(user.rol, targetRole, user.is_premium);
     if (roleError) return res.status(400).json({ message: roleError });
     if (!validateAdminRegisterCode(user.email, targetRole, admin_code)) {
       return res.status(403).json({ message: "Código admin inválido o expirado. Solicita un código automático nuevo para cambiar de rol." });

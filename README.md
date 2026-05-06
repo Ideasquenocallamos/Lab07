@@ -555,3 +555,12 @@ En **Mixto Premium > Tablas usadas** el botón **Ver registros generales** abre 
 - Cada tabla se muestra con `<details>` para expandir/contraer y evitar sobrecargar visualmente la página.
 
 El chatbot también responde sobre panel lector, enlaces, tablas, protección de comunidades, roles, premium, despliegue y códigos.
+
+## 27) Mejora de Mixto a Mixto Premium
+
+Si tu cuenta ya aparece como `mixto` pero aún no es premium, en **Acceso** se muestra la opción **Mejorar a Mixto Premium**:
+
+1. Genera captcha en el bloque de mejora.
+2. Pulsa **Generar códigos** para recibir `admin_code` y `premium_code`.
+3. Pulsa **Cambiar rol** para activar `is_premium=true` sin crear otra cuenta.
+4. Al activarse, aparece el panel **Mixto Premium** con analítica, moderación y tablas expandibles.

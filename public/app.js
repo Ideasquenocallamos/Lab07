@@ -115,7 +115,20 @@ function renderUI() {
   $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Inicia sesión para ver módulos por rol.';
   $('authorCodePanel').classList.toggle('d-none', !isAutorRole());
   $('guestHelpPanel').classList.toggle('d-none', Boolean(isAutorRole()));
-  $('roleUpgradePanel').classList.toggle('d-none', !me || me.rol === 'mixto');
+  const canUpgrade = Boolean(me && !isMixtoPremium());
+  $('roleUpgradePanel').classList.toggle('d-none', !canUpgrade);
+  if (canUpgrade) {
+    const upgradingMixto = me.rol === 'mixto' && !me.is_premium;
+    $('upgradeTitle').innerHTML = upgradingMixto
+      ? '<i class="bi bi-stars me-1"></i>Mejorar a Mixto Premium'
+      : '<i class="bi bi-arrow-up-circle me-1"></i>Cambiar rol de cuenta';
+    $('upgradeHelp').textContent = upgradingMixto
+      ? 'Tu cuenta ya es mixto. Genera captcha y códigos para activar las funciones premium de analítica y moderación.'
+      : 'Si ya tienes lector, no crees otra cuenta con el mismo correo: cambia a Autor o Mixto Premium.';
+    $('upgradeRol').value = upgradingMixto ? 'mixto' : $('upgradeRol').value;
+    $('upgradeRol').disabled = upgradingMixto;
+    $('upgradePremiumCode').classList.toggle('d-none', $('upgradeRol').value !== 'mixto' && !upgradingMixto);
+  }
   $('premiumPanel').classList.toggle('d-none', !isMixtoPremium());
 }
 
@@ -265,6 +278,7 @@ $('btnRequestAdminCode').onclick = async () => {
 };
 
 $('regRol').onchange = updateRoleUI;
+$('upgradeRol').onchange = () => $('upgradePremiumCode').classList.toggle('d-none', $('upgradeRol').value !== 'mixto');
 
 $('btnUpgradeCaptcha').onclick = async () => {
   try {
