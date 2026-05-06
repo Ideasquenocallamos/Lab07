@@ -1,9 +1,26 @@
 import db from "../models/index.js";
 const Comunidad = db.comunidad;
 
+const resolveAutorId = async (userId, requestedAutorId) => {
+  if (requestedAutorId) return requestedAutorId;
+  const autor = await db.autor.findOne({ where: { user_id: userId } });
+  if (autor) return autor.id_autor;
+  const user = await db.user.findByPk(userId);
+  const [created] = await db.autor.findOrCreate({
+    where: { user_id: userId },
+    defaults: {
+      nombre_autor: user?.nombre || "Autor BookSocial",
+      pais_origen: "No especificado",
+      fecha_nacimiento: "1900-01-01",
+      user_id: userId
+    }
+  });
+  return created.id_autor;
+};
+
 export const createComunidad = async (req, res) => {
   try {
-    const payload = { ...req.body, id_autor: req.body.id_autor || req.userId };
+    const payload = { ...req.body, id_autor: await resolveAutorId(req.userId, req.body.id_autor) };
     if (payload.tipo === "privada" && !payload.enlace_invitacion) payload.enlace_invitacion = `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     const c = await Comunidad.create(payload);
     res.status(201).json(c);

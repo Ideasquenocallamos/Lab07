@@ -2,6 +2,21 @@ import db from "../models/index.js";
 const Libro = db.libro;
 const Autor = db.autor;
 
+const trackBookEvent = async ({ req, id_libro = null, event_type, source = null, query = null, metadata = null }) => {
+  try {
+    await db.bookEvent.create({
+      user_id: req.userId || null,
+      id_libro,
+      event_type,
+      source,
+      query,
+      metadata: metadata ? JSON.stringify(metadata) : null
+    });
+  } catch {
+    // La analítica no debe romper lectura/búsqueda de libros.
+  }
+};
+
 async function resolveAutorId(userId, requestedAutorId) {
   if (requestedAutorId) return requestedAutorId;
   const myAutor = await Autor.findOne({ where: { user_id: userId } });
@@ -26,6 +41,7 @@ export const getLibros = async (req, res) => {
   const { q, codigo_privado } = req.query;
   const where = {};
   if (q) where.titulo = { [db.Sequelize.Op.like]: `%${q}%` };
+  await trackBookEvent({ req, event_type: "busqueda", source: req.query.source || "app", query: q || "" });
   const all = await Libro.findAll({ where, include: [{ model: Autor, attributes: ["id_autor", "nombre_autor"] }] });
   const visible = all.filter((l) => l.visibilidad === "publico" || (l.visibilidad === "privado" && codigo_privado && l.codigo_privado === codigo_privado));
   res.json(visible);
@@ -37,6 +53,7 @@ export const getLibro = async (req, res) => {
   if (!libro) return res.status(404).json({ message: "Libro no encontrado" });
   if (libro.visibilidad === "privado" && libro.codigo_privado !== codigo_privado) return res.status(403).json({ message: "Código privado requerido" });
   if (libro.visibilidad === "borrador") return res.status(403).json({ message: "Borrador no visible públicamente" });
+  await trackBookEvent({ req, id_libro: libro.id_libro, event_type: req.query.event_type === "enlace" ? "enlace" : "vista", source: req.query.source || "detalle" });
   res.json(libro);
 };
 
@@ -59,6 +76,7 @@ export const getLibrosPublicos = async (req, res) => {
   const { q } = req.query;
   const where = { visibilidad: "publico" };
   if (q) where.titulo = { [db.Sequelize.Op.like]: `%${q}%` };
+  await trackBookEvent({ req, event_type: "busqueda", source: req.query.source || "publico", query: q || "" });
   const libros = await Libro.findAll({ where, include: [{ model: Autor, attributes: ["id_autor", "nombre_autor"] }] });
   res.json(libros);
 };

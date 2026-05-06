@@ -18,3 +18,11 @@ export const isAutor = async (req, res, next) => {
   if (!user || !["autor", "mixto"].includes(user.rol)) return res.status(403).json({ message: "Solo autores administradores" });
   next();
 };
+
+export const isMixtoPremium = async (req, res, next) => {
+  const user = await db.user.findByPk(req.userId);
+  if (!user || user.rol !== "mixto" || !user.is_premium) {
+    return res.status(403).json({ message: "Función premium exclusiva para cuentas mixtas" });
+  }
+  next();
+};

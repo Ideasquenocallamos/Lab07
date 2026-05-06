@@ -16,6 +16,18 @@ const isDbConnectionError = (error) =>
   ["SequelizeConnectionError", "SequelizeConnectionRefusedError", "SequelizeHostNotFoundError", "SequelizeAccessDeniedError"].includes(error.name);
 
 
+const assertValidRoleChange = (currentRole, targetRole) => {
+  if (!["autor", "mixto"].includes(targetRole)) return "Solo puedes cambiar a autor o mixto";
+  if (currentRole === targetRole) return "Tu cuenta ya tiene ese rol";
+  if (currentRole === "mixto") return "La cuenta mixta ya conserva lector y autor; no requiere más cambios";
+  return null;
+};
+
+const premiumCodeIsValid = (code) => {
+  const expected = process.env.PREMIUM_ACTIVATION_CODE;
+  return Boolean(expected && String(code || "").trim() === expected);
+};
+
 const validateAdminRegisterCode = (email, rol, code) => {
   const cleanCode = String(code || "").trim();
   const fixedCode = process.env.ADMIN_REGISTER_CODE;
@@ -163,11 +175,53 @@ export const signup = async (req, res) => {
     res.status(201).json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(409).json({ message: "Ese correo Gmail ya está registrado. Inicia sesión o usa otro Gmail." });
+      return res.status(409).json({ message: "Ese Gmail ya está registrado. Inicia sesión y usa Cambiar rol para pasar de lector a autor/mixto sin crear otra cuenta." });
     }
     if (isDbConnectionError(error) || error.name === "SequelizeDatabaseError") {
       return res.status(500).json({ message: dbErrorMessage(error) });
     }
+    res.status(500).json({ message: dbErrorMessage(error) });
+  }
+};
+
+export const changeRole = async (req, res) => {
+  try {
+    const { target_rol, admin_code, premium_code } = req.body;
+    const targetRole = ["autor", "mixto"].includes(target_rol) ? target_rol : "autor";
+    const user = await User.findByPk(req.userId);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    const roleError = assertValidRoleChange(user.rol, targetRole);
+    if (roleError) return res.status(400).json({ message: roleError });
+    if (!validateAdminRegisterCode(user.email, targetRole, admin_code)) {
+      return res.status(403).json({ message: "Código admin inválido o expirado. Solicita un código automático nuevo para cambiar de rol." });
+    }
+    if (targetRole === "mixto" && !user.is_premium && !premiumCodeIsValid(premium_code)) {
+      return res.status(402).json({ message: "La cuenta mixta es premium. Ingresa PREMIUM_ACTIVATION_CODE válido para activar mixto." });
+    }
+
+    user.rol = targetRole;
+    if (targetRole === "mixto") user.is_premium = true;
+    if (["autor", "mixto"].includes(targetRole) && !user.author_code) user.author_code = genCode();
+    await user.save();
+
+    const token = jwt.sign({ id: user.id, rol: user.rol }, config.secret, { expiresIn: 86400 });
+    res.json({
+      message: targetRole === "mixto"
+        ? "Cuenta actualizada a mixto premium. Conservas lectura y acceso administrativo avanzado."
+        : "Cuenta actualizada a autor. Conservas tu acceso lector y habilitas gestión de autor.",
+      id: user.id,
+      nombre: user.nombre,
+      email: user.email,
+      rol: user.rol,
+      is_premium: user.is_premium,
+      incognito_mode: user.incognito_mode,
+      linked_author_id: user.linked_author_id,
+      bio: user.bio,
+      avatar_url: user.avatar_url,
+      accessToken: token
+    });
+  } catch (error) {
     res.status(500).json({ message: dbErrorMessage(error) });
   }
 };

@@ -72,6 +72,8 @@ function renderUI() {
   $('logout').classList.toggle('d-none', !me);
   $('authorCodePanel').classList.toggle('d-none', !me || !['autor', 'mixto'].includes(me.rol));
   $('guestHelpPanel').classList.toggle('d-none', Boolean(me && ['autor', 'mixto'].includes(me.rol)));
+  $('roleUpgradePanel').classList.toggle('d-none', !me || me.rol === 'mixto');
+  $('premiumPanel').classList.toggle('d-none', !me || me.rol !== 'mixto' || !me.is_premium);
 }
 
 function updateRoleUI() {
@@ -220,3 +222,39 @@ $('btnRequestAdminCode').onclick = async () => {
 };
 
 $('regRol').onchange = updateRoleUI;
+
+
+$('btnChangeRole').onclick = async () => {
+  try {
+    if (!me) throw new Error('Inicia sesión para cambiar el rol de tu cuenta.');
+    const data = await api('/api/auth/change-role', {
+      method: 'POST',
+      auth: true,
+      body: {
+        target_rol: $('upgradeRol').value,
+        admin_code: $('upgradeAdminCode').value.trim(),
+        premium_code: $('upgradePremiumCode').value.trim()
+      }
+    });
+    token = data.accessToken;
+    me = data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('me', JSON.stringify(me));
+    renderUI();
+    showSuccess('Rol actualizado', data.message);
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnAnalytics').onclick = async () => {
+  try {
+    const id = $('analyticsCommunityId').value.trim();
+    if (!id) throw new Error('Escribe el ID de comunidad.');
+    const data = await api(`/api/comunidades/${id}/analytics`, { auth: true });
+    $('premiumOut').textContent = JSON.stringify(data, null, 2);
+    showSuccess('Analítica cargada', 'Revisa la gráfica y datos recolectados de tu comunidad.');
+  } catch (error) {
+    handleError(error);
+  }
+};

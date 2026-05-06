@@ -459,3 +459,38 @@ ADMIN_CODE_RESPONSE=true
 ```
 
 > Si SMTP no está configurado, la app sigue generando el código y lo muestra/autocompleta para pruebas rápidas. En producción configura SMTP y usa `ADMIN_CODE_RESPONSE=false` si quieres que el código solo llegue por correo.
+
+## 21) Límite de cuenta por correo y cambio de rol
+
+- Solo existe **una cuenta por Gmail**. No se crean cuentas duplicadas para lector/autor/mixto.
+- Si ya te registraste como `lector`, inicia sesión y usa **Cambiar rol de cuenta** para pasar a `autor` o `mixto`.
+- `autor` conserva el acceso lector y agrega administración de libros/comunidades.
+- `mixto` es el perfil premium: conserva lector + autor y agrega analítica, gráfica de vistas/búsquedas y moderación avanzada.
+- El sistema solo permite los tres tipos válidos: `lector`, `autor`, `mixto`.
+
+Endpoint para cambiar rol:
+
+```http
+POST /api/auth/change-role
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "target_rol": "autor",
+  "admin_code": "123456"
+}
+```
+
+Para `mixto` agrega el código premium configurado:
+
+```env
+PREMIUM_ACTIVATION_CODE=BOOKSOCIAL_PREMIUM
+```
+
+## 22) Funciones Mixto Premium
+
+Las funciones premium están restringidas a usuarios con `rol=mixto` e `is_premium=true`:
+
+- `GET /api/comunidades/:idComunidad/analytics`: devuelve resumen, miembros, publicaciones recientes y una gráfica JSON con búsquedas/vistas/enlaces registrados.
+- `POST /api/comunidades/members/moderate`: permite activar, restringir o bloquear miembros de una comunidad propia.
+- Las búsquedas, vistas y aperturas de libros se registran en `book_events` para estudiar intereses, reseñas, enlaces y tendencias antes de planear una próxima obra.
