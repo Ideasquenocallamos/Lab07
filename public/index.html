@@ -85,7 +85,16 @@
                   </select>
                 </div>
                 <div class="col-md-4"><input id="upgradeAdminCode" class="form-control form-control-sm" placeholder="Código admin"></div>
-                <div class="col-md-4"><input id="upgradePremiumCode" class="form-control form-control-sm" placeholder="Código premium"></div>
+                <div class="col-md-4"><input id="upgradePremiumCode" class="form-control form-control-sm" placeholder="Código premium mixto"></div>
+                <div class="col-12">
+                  <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <button id="btnUpgradeCaptcha" type="button" class="btn btn-sm btn-warning">Generar captcha</button>
+                    <img id="upgradeCaptchaImg" class="captcha-img small-captcha" alt="captcha cambio de rol" />
+                    <input id="upgradeCaptchaAnswer" class="form-control form-control-sm captcha-input" placeholder="Captcha">
+                    <button id="btnRequestRoleCode" type="button" class="btn btn-sm btn-outline-success">Generar códigos</button>
+                  </div>
+                  <div id="upgradeCodeResult" class="small mt-2 text-muted"></div>
+                </div>
                 <div class="col-12"><button id="btnChangeRole" class="btn btn-sm btn-outline-primary w-100">Cambiar rol</button></div>
               </div>
             </div>

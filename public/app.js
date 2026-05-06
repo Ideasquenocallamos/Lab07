@@ -3,6 +3,7 @@ let token = localStorage.getItem('token') || '';
 let me = JSON.parse(localStorage.getItem('me') || 'null');
 let captchaId = '';
 let regCaptchaId = '';
+let upgradeCaptchaId = '';
 
 const $ = (id) => document.getElementById(id);
 const flash = (message, ok = true) => {
@@ -48,7 +49,7 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   const data = contentType.includes('application/json') ? await response.json() : { message: await response.text() };
 
   if (!response.ok) {
-    if (auth && [401, 403].includes(response.status)) {
+    if (auth && response.status === 401) {
       token = '';
       me = null;
       localStorage.clear();
@@ -222,6 +223,41 @@ $('btnRequestAdminCode').onclick = async () => {
 };
 
 $('regRol').onchange = updateRoleUI;
+
+$('btnUpgradeCaptcha').onclick = async () => {
+  try {
+    if (!me) throw new Error('Inicia sesión para generar códigos de cambio de rol.');
+    const captcha = await api('/api/auth/captcha');
+    upgradeCaptchaId = captcha.captcha_id;
+    $('upgradeCaptchaImg').src = captcha.image_base64;
+    $('upgradeCodeResult').textContent = 'Captcha listo. Escríbelo y pulsa Generar códigos.';
+    showSuccess('Captcha de cambio generado', 'Escribe el código de la imagen para generar el código admin y, si eliges mixto, el premium.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnRequestRoleCode').onclick = async () => {
+  try {
+    if (!me) throw new Error('Inicia sesión para generar códigos de cambio de rol.');
+    if (!upgradeCaptchaId) throw new Error('Genera captcha de cambio de rol primero.');
+    const result = await api('/api/auth/request-role-code', {
+      method: 'POST',
+      auth: true,
+      body: {
+        target_rol: $('upgradeRol').value,
+        captcha_id: upgradeCaptchaId,
+        answer: $('upgradeCaptchaAnswer').value
+      }
+    });
+    if (result.admin_code) $('upgradeAdminCode').value = result.admin_code;
+    if (result.premium_code) $('upgradePremiumCode').value = result.premium_code;
+    $('upgradeCodeResult').innerHTML = `${result.message}<br><b>Admin:</b> ${result.admin_email}${result.admin_code ? `<br><b>Código admin:</b> ${result.admin_code}` : ''}${result.premium_code ? `<br><b>Código premium:</b> ${result.premium_code}` : ''}`;
+    showSuccess('Códigos de rol listos', result.email_sent ? 'Revisa Gmail y pega los códigos recibidos.' : 'Los códigos se generaron y se copiaron en los campos.');
+  } catch (error) {
+    handleError(error);
+  }
+};
 
 
 $('btnChangeRole').onclick = async () => {

@@ -7,9 +7,12 @@ import { sendMail } from "../utils/mailer.js";
 const User = db.user;
 const captchaStore = new Map();
 const adminCodeStore = new Map();
+const premiumCodeStore = new Map();
 const genCode = () => `AUT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const genAdminCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const genPremiumCode = () => `PREM-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 const adminCodeKey = (email, rol) => `${String(email || "").trim().toLowerCase()}:${rol}`;
+const premiumCodeKey = (email) => String(email || "").trim().toLowerCase();
 const ADMIN_CODE_TTL_MS = 10 * 60 * 1000;
 
 const isDbConnectionError = (error) =>
@@ -23,9 +26,20 @@ const assertValidRoleChange = (currentRole, targetRole) => {
   return null;
 };
 
-const premiumCodeIsValid = (code) => {
+const premiumCodeIsValid = (email, code) => {
+  const cleanCode = String(code || "").trim();
   const expected = process.env.PREMIUM_ACTIVATION_CODE;
-  return Boolean(expected && String(code || "").trim() === expected);
+  if (expected && cleanCode === expected) return true;
+
+  const key = premiumCodeKey(email);
+  const stored = premiumCodeStore.get(key);
+  if (!stored || Date.now() > stored.expiresAt) {
+    premiumCodeStore.delete(key);
+    return false;
+  }
+  if (stored.code !== cleanCode) return false;
+  premiumCodeStore.delete(key);
+  return true;
 };
 
 const validateAdminRegisterCode = (email, rol, code) => {
@@ -42,6 +56,33 @@ const validateAdminRegisterCode = (email, rol, code) => {
   if (stored.code !== cleanCode) return false;
   adminCodeStore.delete(key);
   return true;
+};
+
+const validateCaptchaAnswer = (captcha_id, answer) => {
+  const data = captchaStore.get(captcha_id);
+  if (!data || Date.now() > data.expiresAt || String(answer || "").toUpperCase().trim() !== String(data.code).toUpperCase()) {
+    return false;
+  }
+  captchaStore.delete(captcha_id);
+  return true;
+};
+
+const buildRoleChangeEmail = ({ adminCode, premiumCode, targetRole, email, adminEmail }) => {
+  const expiresMinutes = Math.floor(ADMIN_CODE_TTL_MS / 60000);
+  const premiumLine = premiumCode ? `
+Código premium mixto: ${premiumCode}` : "";
+  const text = `Hola,
+
+Solicitaste cambiar tu cuenta BookSocial al rol ${targetRole}.
+Código admin para cambio de rol: ${adminCode}${premiumLine}
+
+Correo solicitante: ${email}
+Administrador de contacto: ${adminEmail}
+Vence en ${expiresMinutes} minutos. Si no solicitaste este cambio, ignora este mensaje.
+
+BookSocial`;
+  const html = `<p>Hola,</p><p>Solicitaste cambiar tu cuenta BookSocial al rol <b>${targetRole}</b>.</p><p><b>Código admin:</b> ${adminCode}</p>${premiumCode ? `<p><b>Código premium mixto:</b> ${premiumCode}</p>` : ""}<p><b>Correo solicitante:</b> ${email}<br><b>Administrador de contacto:</b> ${adminEmail}<br><b>Vence en:</b> ${expiresMinutes} minutos</p><p>Si no solicitaste este cambio, ignora este mensaje.</p><p>BookSocial</p>`;
+  return { text, html };
 };
 
 const buildAdminCodeEmail = ({ code, rol, email, adminEmail }) => {
@@ -96,11 +137,9 @@ export const requestAdminCode = async (req, res) => {
     return res.status(400).json({ message: "El código admin solo aplica para autor o mixto" });
   }
 
-  const data = captchaStore.get(captcha_id);
-  if (!data || Date.now() > data.expiresAt || String(answer || "").toUpperCase().trim() !== String(data.code).toUpperCase()) {
+  if (!validateCaptchaAnswer(captcha_id, answer)) {
     return res.status(400).json({ message: "Captcha inválido o expirado" });
   }
-  captchaStore.delete(captcha_id);
 
   const adminEmail = process.env.ADMIN_EMAIL || "andersson.guevara.b@tecsup.edu.pe";
   const code = genAdminCode();
@@ -134,13 +173,62 @@ export const requestAdminCode = async (req, res) => {
   });
 };
 
+export const requestRoleChangeCode = async (req, res) => {
+  try {
+    const { target_rol, captcha_id, answer } = req.body;
+    const targetRole = ["autor", "mixto"].includes(target_rol) ? target_rol : "autor";
+    const user = await User.findByPk(req.userId);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    const roleError = assertValidRoleChange(user.rol, targetRole);
+    if (roleError) return res.status(400).json({ message: roleError });
+    if (!validateCaptchaAnswer(captcha_id, answer)) {
+      return res.status(400).json({ message: "Captcha inválido o expirado" });
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL || "andersson.guevara.b@tecsup.edu.pe";
+    const adminCode = genAdminCode();
+    const premiumCode = targetRole === "mixto" ? genPremiumCode() : null;
+    adminCodeStore.set(adminCodeKey(user.email, targetRole), { code: adminCode, expiresAt: Date.now() + ADMIN_CODE_TTL_MS });
+    if (premiumCode) premiumCodeStore.set(premiumCodeKey(user.email), { code: premiumCode, expiresAt: Date.now() + ADMIN_CODE_TTL_MS });
+
+    const { text, html } = buildRoleChangeEmail({ adminCode, premiumCode, targetRole, email: user.email, adminEmail });
+    let mailResult;
+    try {
+      mailResult = await sendMail({
+        to: user.email,
+        cc: [adminEmail],
+        subject: `Códigos BookSocial para cambio a ${targetRole}`,
+        text,
+        html,
+        replyTo: adminEmail
+      });
+    } catch (error) {
+      mailResult = { sent: false, reason: error.message };
+    }
+
+    const includeCode = process.env.ADMIN_CODE_RESPONSE !== "false" || !mailResult.sent;
+    res.json({
+      message: mailResult.sent
+        ? "Códigos enviados a tu Gmail. Revisa bandeja de entrada o spam y pégalos para cambiar rol."
+        : "Códigos generados. Configura SMTP_HOST/SMTP_USER/SMTP_PASS para enviarlos por correo; mientras tanto se muestran en pantalla.",
+      admin_email: adminEmail,
+      email_sent: mailResult.sent,
+      mail_status: mailResult.reason || "sent",
+      expires_in_minutes: Math.floor(ADMIN_CODE_TTL_MS / 60000),
+      ...(includeCode ? { admin_code: adminCode } : {}),
+      ...(includeCode && premiumCode ? { premium_code: premiumCode } : {})
+    });
+  } catch (error) {
+    res.status(500).json({ message: dbErrorMessage(error) });
+  }
+};
+
 export const revealAuthorCode = async (req, res) => {
   const { captcha_id, answer } = req.body;
-  const data = captchaStore.get(captcha_id);
-  if (!data || Date.now() > data.expiresAt || String(answer || "").toUpperCase().trim() !== String(data.code).toUpperCase()) {
+  if (!validateCaptchaAnswer(captcha_id, answer)) {
     return res.status(400).json({ message: "Captcha inválido" });
   }
-  captchaStore.delete(captcha_id);
   const user = await User.findByPk(req.userId);
   if (!user || !["autor", "mixto"].includes(user.rol)) return res.status(403).json({ message: "Solo autor puede obtener código" });
   if (!user.author_code) {
@@ -196,8 +284,8 @@ export const changeRole = async (req, res) => {
     if (!validateAdminRegisterCode(user.email, targetRole, admin_code)) {
       return res.status(403).json({ message: "Código admin inválido o expirado. Solicita un código automático nuevo para cambiar de rol." });
     }
-    if (targetRole === "mixto" && !user.is_premium && !premiumCodeIsValid(premium_code)) {
-      return res.status(402).json({ message: "La cuenta mixta es premium. Ingresa PREMIUM_ACTIVATION_CODE válido para activar mixto." });
+    if (targetRole === "mixto" && !user.is_premium && !premiumCodeIsValid(user.email, premium_code)) {
+      return res.status(402).json({ message: "La cuenta mixta es premium. Genera y pega el código premium para activar mixto." });
     }
 
     user.rol = targetRole;

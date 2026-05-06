@@ -217,7 +217,7 @@ Body:
 2. En Render: **New Web Service**.
 3. Conecta tu repositorio.
 4. Configura:
-   - Build: `npm install`
+   - Build: `npm install --omit=dev`
    - Start: `npm start`
 5. Agrega variables de entorno:
    - `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
@@ -356,8 +356,11 @@ Además necesitas **1 servicio de base de datos MySQL**:
 2. `lab07-mysql` → Servicio MySQL (si lo quieres dentro de Railway).
 
 ### Configuración mínima del servicio web
-- Build Command: `npm install`
+- Build Command: `npm install --omit=dev`
 - Start Command: `npm start`
+
+> Nota npm: si Railway u otro hosting muestra `npm warn config production Use --omit=dev instead`, elimina la variable `NPM_CONFIG_PRODUCTION` del entorno y usa `npm install --omit=dev` como comando de build. El repositorio incluye `.npmrc` con `omit=dev` para evitar depender de la opción antigua `production=true`.
+
 - Variables:
   - `DB_HOST`
   - `DB_USER`
@@ -468,7 +471,27 @@ ADMIN_CODE_RESPONSE=true
 - `mixto` es el perfil premium: conserva lector + autor y agrega analítica, gráfica de vistas/búsquedas y moderación avanzada.
 - El sistema solo permite los tres tipos válidos: `lector`, `autor`, `mixto`.
 
-Endpoint para cambiar rol:
+Flujo recomendado para cambiar rol desde frontend:
+
+1. Inicia sesión con tu Gmail registrado.
+2. En **Cambiar rol de cuenta**, selecciona `Autor` o `Mixto Premium`.
+3. Pulsa **Generar captcha**, escribe el captcha y pulsa **Generar códigos**.
+4. La app genera un código admin; si elegiste `mixto`, también genera un código premium. Ambos vencen en 10 minutos y pueden enviarse por SMTP.
+5. Pulsa **Cambiar rol** para aplicar el cambio.
+
+Endpoints del flujo:
+
+```http
+POST /api/auth/request-role-code
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "target_rol": "mixto",
+  "captcha_id": "cap_...",
+  "answer": "ABCDE"
+}
+```
 
 ```http
 POST /api/auth/change-role
@@ -476,16 +499,13 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "target_rol": "autor",
-  "admin_code": "123456"
+  "target_rol": "mixto",
+  "admin_code": "123456",
+  "premium_code": "PREM-ABC123"
 }
 ```
 
-Para `mixto` agrega el código premium configurado:
-
-```env
-PREMIUM_ACTIVATION_CODE=BOOKSOCIAL_PREMIUM
-```
+También puedes definir `PREMIUM_ACTIVATION_CODE` como código premium fijo de emergencia, pero el flujo normal genera código premium con captcha.
 
 ## 22) Funciones Mixto Premium
 
