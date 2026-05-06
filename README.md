@@ -546,15 +546,17 @@ Campos adicionales de libro usados por la aplicación:
 - Control beta: `beta_reader_code` para lectores prueba/tester de borradores.
 - Comunidad y protección: ingreso por invitación, estados de miembro activo/restringido/bloqueado y reseñas para detectar actividad dañina o ataques a obras.
 
-## 26) Vista expandible de tablas y registros
+## 26) Vista expandible privada de tablas y registros
 
-En **Mixto Premium > Tablas usadas** el botón **Ver registros generales** abre una sección inferior expandible con conteos y registros recientes por tabla:
+En **Mixto Premium > Tablas usadas** el botón **Ver mis registros privados** abre una sección inferior expandible con conteos y registros recientes filtrados por tu cuenta:
 
-- Usuarios, autores, libros, comunidades y miembros.
-- Posts, notificaciones, eventos de lectura/búsqueda/reseñas, salas y mensajes.
-- Cada tabla se muestra con `<details>` para expandir/contraer y evitar sobrecargar visualmente la página.
+- Solo tu usuario, tus autores, tus libros y tus comunidades creadas.
+- Tus membresías, publicaciones, notificaciones, eventos de lectura/búsqueda/reseñas, salas de tus comunidades y tus mensajes.
+- No muestra registros de otras cuentas para mantener privacidad.
+- Cada tabla se muestra con `<details>` cerrado por defecto y cada registro aparece enmascarado con `••••••••` hasta pulsar el botón de ojito.
+- Solo puede quedar visible un registro a la vez: al seleccionar otro ojito, el registro anterior se oculta automáticamente para reducir exposición en capturas de pantalla.
 
-El chatbot también responde sobre panel lector, enlaces, tablas, protección de comunidades, roles, premium, despliegue y códigos.
+El chatbot también responde sobre panel lector, enlaces, tablas privadas, protección de comunidades, roles, premium, despliegue y códigos.
 
 ## 27) Mejora de Mixto a Mixto Premium
 

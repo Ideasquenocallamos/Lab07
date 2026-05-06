@@ -236,3 +236,43 @@ body {
   max-width: 220px;
   white-space: nowrap;
 }
+
+
+.private-table-hint {
+  color: #64748b;
+  font-size: 0.78rem;
+  margin: 10px 0 0;
+}
+
+.private-action-cell {
+  width: 112px;
+}
+
+.toggle-private-record {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.private-mask {
+  background: #e2e8f0;
+  border-radius: 999px;
+  color: #64748b;
+  display: inline-block;
+  font-family: monospace;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+}
+
+.private-record-row.is-visible {
+  background: #fff7ed;
+}
+
+.private-value {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}

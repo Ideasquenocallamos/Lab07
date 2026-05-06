@@ -425,21 +425,63 @@ const compactValue = (value) => {
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 };
+const escapeHtml = (value) => compactValue(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+let privateTableRows = {};
+
+const privateRowKey = (tableKey, rowIndex) => `${tableKey}:${rowIndex}`;
+const maskedCell = () => '<span class="private-mask">••••••••</span>';
+
+const closeVisiblePrivateRows = (exceptKey = '') => {
+  document.querySelectorAll('.private-record-row.is-visible').forEach((row) => {
+    if (row.dataset.rowKey === exceptKey) return;
+    row.classList.remove('is-visible');
+    row.querySelectorAll('[data-private-cell]').forEach((cell) => { cell.innerHTML = maskedCell(); });
+    const button = row.querySelector('.toggle-private-record');
+    if (button) {
+      button.setAttribute('aria-pressed', 'false');
+      button.innerHTML = '<i class="bi bi-eye"></i><span>Mostrar</span>';
+    }
+  });
+};
+
+const renderPrivateRowValues = (rowElement, values) => {
+  rowElement.querySelectorAll('[data-private-cell]').forEach((cell) => {
+    const column = cell.dataset.privateCell;
+    cell.innerHTML = `<span class="private-value">${escapeHtml(values[column]).slice(0, 80)}</span>`;
+  });
+};
 
 const renderTablesOverview = (payload) => {
   $('tablesGeneratedAt').textContent = payload.generated_at ? new Date(payload.generated_at).toLocaleString() : 'Actualizado';
+  privateTableRows = {};
   $('tablesOverviewContent').innerHTML = payload.tables.map((table) => {
     const rows = table.rows || [];
     const columns = [...new Set(rows.flatMap((row) => Object.keys(row).slice(0, 6)))];
+    privateTableRows[table.key] = rows;
     const body = rows.length
-      ? rows.map((row) => `<tr>${columns.map((column) => `<td>${compactValue(row[column]).slice(0, 80)}</td>`).join('')}</tr>`).join('')
-      : `<tr><td class="text-muted">Sin registros recientes</td></tr>`;
-    const header = columns.length ? columns.map((column) => `<th>${column}</th>`).join('') : '<th>Estado</th>';
+      ? rows.map((row, rowIndex) => `
+        <tr class="private-record-row" data-table-key="${escapeHtml(table.key)}" data-row-index="${rowIndex}" data-row-key="${escapeHtml(privateRowKey(table.key, rowIndex))}">
+          <td class="private-action-cell">
+            <button class="btn btn-sm btn-outline-secondary toggle-private-record" type="button" aria-pressed="false" aria-label="Mostrar u ocultar este registro privado">
+              <i class="bi bi-eye"></i><span>Mostrar</span>
+            </button>
+          </td>
+          ${columns.map((column) => `<td data-private-cell="${escapeHtml(column)}">${maskedCell()}</td>`).join('')}
+        </tr>
+      `).join('')
+      : `<tr><td class="text-muted" colspan="${columns.length + 1 || 1}">Sin registros recientes</td></tr>`;
+    const header = columns.length ? `<th>Ojito</th>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}` : '<th>Estado</th>';
     return `
-      <details class="table-detail" ${table.count ? 'open' : ''}>
-        <summary><span>${table.label}</span><span class="badge text-bg-primary">${table.count}</span></summary>
+      <details class="table-detail">
+        <summary><span>${escapeHtml(table.label)}</span><span class="badge text-bg-primary">${table.count}</span></summary>
+        <p class="private-table-hint"><i class="bi bi-eye-slash me-1"></i>Los registros están ocultos. Pulsa el ojito para ver solo uno; al abrir otro, el anterior se vuelve a ocultar.</p>
         <div class="table-responsive mt-2">
-          <table class="table table-sm align-middle mb-0">
+          <table class="table table-sm align-middle mb-0 private-record-table">
             <thead><tr>${header}</tr></thead>
             <tbody>${body}</tbody>
           </table>
@@ -448,6 +490,25 @@ const renderTablesOverview = (payload) => {
     `;
   }).join('');
 };
+
+$('tablesOverviewContent').addEventListener('click', (event) => {
+  const button = event.target.closest('.toggle-private-record');
+  if (!button) return;
+  const row = button.closest('.private-record-row');
+  const rowKey = row.dataset.rowKey;
+  const isVisible = row.classList.contains('is-visible');
+  closeVisiblePrivateRows(isVisible ? '' : rowKey);
+  if (isVisible) return;
+  const values = privateTableRows[row.dataset.tableKey]?.[Number(row.dataset.rowIndex)] || {};
+  renderPrivateRowValues(row, values);
+  row.classList.add('is-visible');
+  button.setAttribute('aria-pressed', 'true');
+  button.innerHTML = '<i class="bi bi-eye-slash"></i><span>Ocultar</span>';
+});
+
+$('tablesOverviewContent').addEventListener('toggle', (event) => {
+  if (event.target.matches('.table-detail') && !event.target.open) closeVisiblePrivateRows();
+}, true);
 
 $('btnMixAnalytics').onclick = async () => {
   try {
@@ -486,7 +547,7 @@ $('btnTablesOverview').onclick = async () => {
     const data = await api('/api/admin/tables-overview', { auth: true });
     renderTablesOverview(data);
     showJson('mixtoOut', { resumen_tablas: data.tables.map((table) => ({ tabla: table.key, registros: table.count })) });
-    showSuccess('Tablas cargadas', 'La vista inferior muestra registros generales por tabla.');
+    showSuccess('Mis registros cargados', 'La vista inferior solo muestra datos vinculados a tu cuenta.');
   } catch (error) {
     handleError(error);
   }
@@ -499,7 +560,7 @@ const appAnswers = [
   { keys: ['comunidad', 'moderacion', 'bloquear'], answer: 'En Mixto Premium puedes consultar analítica de comunidad y moderar miembros con estados activo, restringido o bloqueado desde el panel Mixto.' },
   { keys: ['libro', 'publicar'], answer: 'En el panel Autor puedes crear libros con título, año, derechos, género, etiquetas, audiencia, enlaces externos y visibilidad pública/privada/borrador. Las búsquedas y vistas alimentan book_events.' },
   { keys: ['lector', 'enlaces', 'wattpad', 'ao3', 'fanfiction', 'webnovel', 'drive'], answer: 'El panel Lector permite buscar obras, usar código privado o beta, abrir enlaces Wattpad/AO3/FanFiction/Webnovel/Drive y dejar reseñas.' },
-  { keys: ['tabla', 'tablas', 'registros'], answer: 'En Mixto Premium, abre Tablas usadas y pulsa Ver registros generales. Verás conteos y registros recientes de users, autores, libros, comunidades, miembros, posts, notificaciones y eventos.' },
+  { keys: ['tabla', 'tablas', 'registros'], answer: 'En Mixto Premium, abre Tablas usadas y pulsa Ver mis registros privados. Solo verás datos vinculados a tu cuenta; cada registro está oculto con ojito y al mostrar uno se oculta cualquier otro abierto.' },
   { keys: ['ataque', 'ataques', 'proteccion', 'proteger'], answer: 'Para proteger comunidades usa invitación privada, reglas claras y moderación Mixto Premium: activo, restringido o bloqueado. Las reseñas/eventos ayudan a detectar actividad dañina.' },
   { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' }
 ];

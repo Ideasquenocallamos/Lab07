@@ -97,26 +97,38 @@ export const getCommunityAnalytics = async (req, res) => {
 
 
 const tableRegistry = [
-  { key: 'users', label: 'Usuarios', model: 'user', order: 'id', attributes: ['id', 'nombre', 'email', 'rol', 'is_premium'] },
-  { key: 'autores', label: 'Autores', model: 'autor', order: 'id_autor' },
-  { key: 'libros', label: 'Libros', model: 'libro', order: 'id_libro' },
-  { key: 'comunidades', label: 'Comunidades', model: 'comunidad', order: 'id_comunidad' },
-  { key: 'miembros', label: 'Miembros comunidad', model: 'member', order: 'id_member' },
-  { key: 'posts', label: 'Publicaciones', model: 'post', order: 'id_post' },
-  { key: 'notificaciones', label: 'Notificaciones', model: 'notification', order: 'id_notification' },
-  { key: 'eventos', label: 'Eventos de libros', model: 'bookEvent', order: 'id_event' },
-  { key: 'salas', label: 'Salas', model: 'sala', order: 'id_sala' },
-  { key: 'mensajes_sala', label: 'Mensajes sala', model: 'salaMessage', order: 'id_msg' }
+  { key: 'users', label: 'Mi cuenta', model: 'user', order: 'id', attributes: ['id', 'nombre', 'email', 'rol', 'is_premium'], scope: ({ userId }) => ({ id: userId }) },
+  { key: 'autores', label: 'Mis autores', model: 'autor', order: 'id_autor', scope: ({ userId }) => ({ user_id: userId }) },
+  { key: 'libros', label: 'Mis libros', model: 'libro', order: 'id_libro', scope: ({ authorIds }) => authorIds.length ? { id_autor: authorIds } : { id_autor: -1 } },
+  { key: 'comunidades', label: 'Mis comunidades creadas', model: 'comunidad', order: 'id_comunidad', scope: ({ authorIds }) => authorIds.length ? { id_autor: authorIds } : { id_autor: -1 } },
+  { key: 'miembros', label: 'Mis membresías', model: 'member', order: 'id_member', scope: ({ userId }) => ({ user_id: userId }) },
+  { key: 'posts', label: 'Mis publicaciones', model: 'post', order: 'id_post', scope: ({ userId }) => ({ user_id: userId }) },
+  { key: 'notificaciones', label: 'Mis notificaciones', model: 'notification', order: 'id_notification', scope: ({ userId }) => ({ user_id: userId }) },
+  { key: 'eventos', label: 'Mis interacciones', model: 'bookEvent', order: 'id_event', scope: ({ userId }) => ({ user_id: userId }) },
+  { key: 'salas', label: 'Salas de mis comunidades', model: 'sala', order: 'id_sala', scope: ({ communityIds }) => communityIds.length ? { id_comunidad: communityIds } : { id_comunidad: -1 } },
+  { key: 'mensajes_sala', label: 'Mis mensajes de sala', model: 'salaMessage', order: 'id_msg', scope: ({ userId }) => ({ user_id: userId }) }
 ];
 
-const safeCount = async (model) => {
-  try { return await model.count(); } catch { return 0; }
+const buildPrivateScope = async (userId) => {
+  const autores = await db.autor.findAll({ where: { user_id: userId }, attributes: ['id_autor'] });
+  const authorIds = autores.map((autor) => autor.id_autor);
+  const comunidades = authorIds.length
+    ? await db.comunidad.findAll({ where: { id_autor: authorIds }, attributes: ['id_comunidad'] })
+    : [];
+  const memberRows = await db.member.findAll({ where: { user_id: userId }, attributes: ['id_comunidad'] });
+  const communityIds = [...new Set([...comunidades.map((comunidad) => comunidad.id_comunidad), ...memberRows.map((member) => member.id_comunidad)])];
+  return { userId, authorIds, communityIds };
 };
 
-const safeRows = async ({ model, order, attributes }) => {
+const safeCount = async (model, where) => {
+  try { return await model.count({ where }); } catch { return 0; }
+};
+
+const safeRows = async ({ model, order, attributes, where }) => {
   try {
     return await model.findAll({
       attributes,
+      where,
       order: [[order, 'DESC']],
       limit: 8
     });
@@ -126,14 +138,16 @@ const safeRows = async ({ model, order, attributes }) => {
 };
 
 export const getTablesOverview = async (req, res) => {
+  const scope = await buildPrivateScope(req.userId);
   const tables = await Promise.all(tableRegistry.map(async (table) => {
     const model = db[table.model];
-    if (!model) return { key: table.key, label: table.label, count: 0, rows: [] };
+    const where = table.scope(scope);
+    if (!model) return { key: table.key, label: table.label, count: 0, rows: [], scope: 'private' };
     const [count, rows] = await Promise.all([
-      safeCount(model),
-      safeRows({ model, order: table.order, attributes: table.attributes })
+      safeCount(model, where),
+      safeRows({ model, order: table.order, attributes: table.attributes, where })
     ]);
-    return { key: table.key, label: table.label, count, rows };
+    return { key: table.key, label: table.label, count, rows, scope: 'private' };
   }));
-  res.json({ generated_at: new Date().toISOString(), tables });
+  res.json({ generated_at: new Date().toISOString(), privacy: 'Solo datos vinculados a tu cuenta e interacciones', tables });
 };
