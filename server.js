@@ -37,8 +37,9 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`Servidor en puerto ${PORT}`);
   try {
-    await db.sequelize.sync();
-    console.log("Base de datos sincronizada");
+    const syncAlter = (process.env.DB_SYNC_ALTER || "true").toLowerCase() === "true";
+    await db.sequelize.sync({ alter: syncAlter });
+    console.log(`Base de datos sincronizada${syncAlter ? " con alter" : ""}`);
   } catch (error) {
     console.error("No se pudo sincronizar DB al iniciar:", error.message);
   }

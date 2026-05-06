@@ -84,7 +84,15 @@ export const signup = async (req, res) => {
     }
     const user = await User.create({ nombre, email, rol: targetRole, author_code: ["autor", "mixto"].includes(targetRole) ? genCode() : null, password: bcrypt.hashSync(password, 8) });
     res.status(201).json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol });
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) {
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(409).json({ message: "Ese correo Gmail ya está registrado. Inicia sesión o usa otro Gmail." });
+    }
+    if (error.name === "SequelizeDatabaseError") {
+      return res.status(500).json({ message: "Error de base de datos. Revisa que Railway haya sincronizado las tablas y variables DB." });
+    }
+    res.status(500).json({ message: error.message || "No se pudo completar el registro" });
+  }
 };
 
 export const signin = async (req, res) => {

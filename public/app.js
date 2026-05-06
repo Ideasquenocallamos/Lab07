@@ -27,6 +27,7 @@ const handleError = (error) => {
   showWarning('Proceso no completado', message);
 };
 const closeModal = (id) => bootstrap.Modal.getInstance($(id))?.hide();
+const isGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || '');
 
 async function api(path, { method = 'GET', body, auth = false } = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -43,7 +44,8 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   } catch {
     throw new Error('No se pudo conectar con el servidor. Revisa internet o intenta nuevamente.');
   }
-  const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await response.json() : { message: await response.text() };
 
   if (!response.ok) {
     if ([401, 403].includes(response.status)) {
@@ -92,15 +94,18 @@ document.querySelectorAll('.nav-btn').forEach((button) => {
 
 $('signup').onclick = async () => {
   try {
+    const nombre = $('regNombre').value.trim();
+    const email = $('regEmail').value.trim();
+    const password = $('regPass').value;
+    const rol = $('regRol').value;
+    if (!nombre || !email || !password) throw new Error('Completa nombre, Gmail y contraseña.');
+    if (!isGmail(email)) throw new Error('Debes usar un correo terminado en @gmail.com.');
+    if (['autor', 'mixto'].includes(rol) && !$('regAdminCode').value.trim()) {
+      throw new Error('Para autor/mixto primero solicita y escribe el código admin recibido por Gmail.');
+    }
     await api('/api/auth/signup', {
       method: 'POST',
-      body: {
-        nombre: $('regNombre').value,
-        email: $('regEmail').value,
-        password: $('regPass').value,
-        rol: $('regRol').value,
-        admin_code: $('regAdminCode').value
-      }
+      body: { nombre, email, password, rol, admin_code: $('regAdminCode').value.trim() }
     });
     showSuccess('Registro completado', 'Tu cuenta fue creada. Ahora inicia sesión con tu Gmail.');
     closeModal('registerModal');
@@ -111,9 +116,13 @@ $('signup').onclick = async () => {
 
 $('signin').onclick = async () => {
   try {
+    const email = $('logEmail').value.trim();
+    const password = $('logPass').value;
+    if (!email || !password) throw new Error('Completa Gmail y contraseña.');
+    if (!isGmail(email)) throw new Error('Debes iniciar sesión con un correo @gmail.com.');
     const data = await api('/api/auth/signin', {
       method: 'POST',
-      body: { email: $('logEmail').value, password: $('logPass').value }
+      body: { email, password }
     });
     token = data.accessToken;
     me = data;
@@ -189,10 +198,12 @@ $('btnRegCaptcha').onclick = async () => {
 $('btnRequestAdminCode').onclick = async () => {
   try {
     if (!regCaptchaId) return handleError(new Error('Genera captcha de registro primero.'));
+    const email = $('regEmail').value.trim();
+    if (!isGmail(email)) throw new Error('Escribe un Gmail válido antes de solicitar código.');
     const result = await api('/api/auth/request-admin-code', {
       method: 'POST',
       body: {
-        email: $('regEmail').value,
+        email,
         rol: $('regRol').value,
         captcha_id: regCaptchaId,
         answer: $('regCaptchaAnswer').value
