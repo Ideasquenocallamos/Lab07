@@ -48,7 +48,7 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   const data = contentType.includes('application/json') ? await response.json() : { message: await response.text() };
 
   if (!response.ok) {
-    if ([401, 403].includes(response.status)) {
+    if (auth && [401, 403].includes(response.status)) {
       token = '';
       me = null;
       localStorage.clear();

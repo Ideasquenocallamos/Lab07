@@ -7,6 +7,19 @@ const User = db.user;
 const captchaStore = new Map();
 const genCode = () => `AUT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
+const isDbConnectionError = (error) =>
+  ["SequelizeConnectionError", "SequelizeConnectionRefusedError", "SequelizeHostNotFoundError", "SequelizeAccessDeniedError"].includes(error.name);
+
+const dbErrorMessage = (error) => {
+  if (isDbConnectionError(error)) {
+    return "No hay conexión con MySQL. En Railway revisa DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME o usa las variables MYSQLHOST/MYSQLPORT/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE.";
+  }
+  if (error.name === "SequelizeDatabaseError") {
+    return "Error de base de datos. Activa DB_SYNC_ALTER=true y reinicia Railway para sincronizar la tabla users.";
+  }
+  return error.message || "No se pudo completar el registro";
+};
+
 export const getCaptcha = async (req, res) => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -26,7 +39,8 @@ export const getCaptcha = async (req, res) => {
 
 export const requestAdminCode = async (req, res) => {
   const { email, rol, captcha_id, answer } = req.body;
-  if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || "")) {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(cleanEmail)) {
     return res.status(400).json({ message: "Debes usar un correo Gmail válido" });
   }
   if (!["autor", "mixto"].includes(rol)) {
@@ -42,7 +56,7 @@ export const requestAdminCode = async (req, res) => {
   const adminEmail = process.env.ADMIN_EMAIL || "admin.autor@lab07.com";
   const subject = encodeURIComponent(`Solicitud de código admin para rol ${rol}`);
   const body = encodeURIComponent(`Hola administrador, solicito el código de registro para rol ${rol}.
-Correo Gmail solicitante: ${email}
+Correo Gmail solicitante: ${cleanEmail}
 
 Por favor responder a este correo con el código autorizado.`);
   const mailto_url = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
@@ -75,37 +89,51 @@ export const revealAuthorCode = async (req, res) => {
 export const signup = async (req, res) => {
   try {
     const { nombre, email, password, rol = "lector", admin_code } = req.body;
-    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || "")) {
+    const cleanNombre = String(nombre || "").trim();
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    if (!cleanNombre || !password) {
+      return res.status(400).json({ message: "Completa nombre, Gmail y contraseña" });
+    }
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(cleanEmail)) {
       return res.status(400).json({ message: "Por ahora solo se permite registro con correo Gmail" });
     }
     const targetRole = ["autor", "lector", "mixto"].includes(rol) ? rol : "lector";
     if (["autor", "mixto"].includes(targetRole) && admin_code !== (process.env.ADMIN_REGISTER_CODE || "LAB07_ADMIN")) {
       return res.status(403).json({ message: "Código admin inválido para rol autor/mixto" });
     }
-    const user = await User.create({ nombre, email, rol: targetRole, author_code: ["autor", "mixto"].includes(targetRole) ? genCode() : null, password: bcrypt.hashSync(password, 8) });
+    const user = await User.create({
+      nombre: cleanNombre,
+      email: cleanEmail,
+      rol: targetRole,
+      author_code: ["autor", "mixto"].includes(targetRole) ? genCode() : null,
+      password: bcrypt.hashSync(password, 8)
+    });
     res.status(201).json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(409).json({ message: "Ese correo Gmail ya está registrado. Inicia sesión o usa otro Gmail." });
     }
-    if (error.name === "SequelizeDatabaseError") {
-      return res.status(500).json({ message: "Error de base de datos. Revisa que Railway haya sincronizado las tablas y variables DB." });
+    if (isDbConnectionError(error) || error.name === "SequelizeDatabaseError") {
+      return res.status(500).json({ message: dbErrorMessage(error) });
     }
-    res.status(500).json({ message: error.message || "No se pudo completar el registro" });
+    res.status(500).json({ message: dbErrorMessage(error) });
   }
 };
 
 export const signin = async (req, res) => {
   try {
-    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(req.body.email || "")) {
+    const cleanEmail = String(req.body.email || "").trim().toLowerCase();
+    if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(cleanEmail)) {
       return res.status(400).json({ message: "Por ahora solo se permite Gmail" });
     }
-    const user = await User.findOne({ where: { email: req.body.email } });
+    const user = await User.findOne({ where: { email: cleanEmail } });
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
     if (!bcrypt.compareSync(req.body.password, user.password)) return res.status(401).json({ accessToken: null, message: "Contraseña inválida" });
     const token = jwt.sign({ id: user.id, rol: user.rol }, config.secret, { expiresIn: 86400 });
     res.json({ id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, is_premium: user.is_premium, incognito_mode: user.incognito_mode, linked_author_id: user.linked_author_id, bio: user.bio, avatar_url: user.avatar_url, accessToken: token });
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) {
+    res.status(500).json({ message: dbErrorMessage(error) });
+  }
 };
 
 

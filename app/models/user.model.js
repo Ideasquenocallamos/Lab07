@@ -1,7 +1,9 @@
 export default (sequelize, Sequelize) => {
   return sequelize.define("users", {
     id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
-    nombre: { type: Sequelize.STRING, allowNull: false },
+    // La API usa "nombre", pero el laboratorio original guardaba ese dato en la columna "username".
+    // Mantener el mapeo evita fallos en Railway/MySQL cuando la tabla ya existía con esa columna.
+    nombre: { type: Sequelize.STRING, allowNull: false, field: "username" },
     email: { type: Sequelize.STRING, allowNull: false, unique: true },
     password: { type: Sequelize.STRING, allowNull: false },
     rol: { type: Sequelize.ENUM("autor", "lector", "mixto"), allowNull: false, defaultValue: "lector" },
