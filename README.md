@@ -514,3 +514,23 @@ Las funciones premium están restringidas a usuarios con `rol=mixto` e `is_premi
 - `GET /api/comunidades/:idComunidad/analytics`: devuelve resumen, miembros, publicaciones recientes y una gráfica JSON con búsquedas/vistas/enlaces registrados.
 - `POST /api/comunidades/members/moderate`: permite activar, restringir o bloquear miembros de una comunidad propia.
 - Las búsquedas, vistas y aperturas de libros se registran en `book_events` para estudiar intereses, reseñas, enlaces y tendencias antes de planear una próxima obra.
+
+## 23) Frontend ordenado por módulos
+
+La interfaz está separada para no sobrecargar al usuario:
+
+- Barra superior con etiqueta visual de rol (`Visitante`, `lector`, `autor`, `mixto premium`).
+- Panel **Autor** visible solo para `autor`/`mixto`, con cards para crear libros, comunidades y publicaciones.
+- Panel **Mixto** visible solo para `mixto premium`, con cards para analítica, moderación y referencia de tablas usadas.
+- Panel **IA** con icono de robot y respuestas limitadas al aplicativo BookSocial: roles, códigos, libros, comunidades, analítica, moderación y despliegue.
+
+
+## 24) Navegación principal, secundaria y ubicación
+
+La navegación queda jerarquizada de lo general a lo específico:
+
+- **Principal:** Home y Acceso, siempre visibles.
+- **Secundaria:** módulos de aplicación según rol (`Autor`, `Mixto Premium`, `IA / Chat`).
+- **Terciaria:** breadcrumb de ubicación con formato `BookSocial > Sección > Módulo` para saber dónde estás.
+
+Para Railway/Nixpacks se incluye `nixpacks.toml` con `npm install --omit=dev`; evita usar la variable antigua `NPM_CONFIG_PRODUCTION=true`, que genera el warning `npm warn config production Use --omit=dev instead`.

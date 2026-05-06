@@ -1,11 +1,21 @@
 const API = window.location.origin;
 let token = localStorage.getItem('token') || '';
-let me = JSON.parse(localStorage.getItem('me') || 'null');
+let me = null;
+try {
+  me = JSON.parse(localStorage.getItem('me') || 'null');
+} catch {
+  localStorage.removeItem('me');
+}
 let captchaId = '';
 let regCaptchaId = '';
 let upgradeCaptchaId = '';
 
-const $ = (id) => document.getElementById(id);
+const $ = (id) => {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`Elemento de interfaz no encontrado: ${id}`);
+  return element;
+};
+const maybe = (id) => document.getElementById(id);
 const flash = (message, ok = true) => {
   const alert = $('flash');
   alert.className = `alert ${ok ? 'alert-success' : 'alert-danger'} app-alert`;
@@ -28,7 +38,19 @@ const handleError = (error) => {
   showWarning('Proceso no completado', message);
 };
 const closeModal = (id) => bootstrap.Modal.getInstance($(id))?.hide();
+window.addEventListener('error', (event) => handleError(event.error || new Error(event.message)));
+window.addEventListener('unhandledrejection', (event) => handleError(event.reason));
 const isGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || '');
+const isAutorRole = () => me && ['autor', 'mixto'].includes(me.rol);
+const isMixtoPremium = () => me?.rol === 'mixto' && me?.is_premium;
+const showJson = (id, data) => { $(id).textContent = JSON.stringify(data, null, 2); };
+const tabMeta = {
+  home: { group: 'Principal', label: 'Home' },
+  perfil: { group: 'Principal', label: 'Acceso' },
+  autor: { group: 'Aplicaciones', label: 'Panel Autor' },
+  mixto: { group: 'Aplicaciones', label: 'Mixto Premium' },
+  asistente: { group: 'Aplicaciones', label: 'Asistente IA / Chat' }
+};
 
 async function api(path, { method = 'GET', body, auth = false } = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -61,20 +83,38 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   return data;
 }
 
+function updateBreadcrumb(tabName) {
+  const meta = tabMeta[tabName] || tabMeta.home;
+  $('appBreadcrumb').innerHTML = `
+    <li class="breadcrumb-item"><i class="bi bi-compass me-1"></i>BookSocial</li>
+    <li class="breadcrumb-item">${meta.group}</li>
+    <li class="breadcrumb-item active" aria-current="page">${meta.label}</li>
+  `;
+}
+
 function showTab(tabName) {
+  const target = maybe(`tab-${tabName}`) ? tabName : 'home';
   document.querySelectorAll('.tab-section').forEach((section) => section.classList.add('d-none'));
-  $(`tab-${tabName}`).classList.remove('d-none');
+  $(`tab-${target}`).classList.remove('d-none');
+  document.querySelectorAll('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.tab === target));
+  updateBreadcrumb(target);
 }
 
 function renderUI() {
-  $('session').textContent = me ? `Sesión activa: ${me.nombre} (${me.rol})` : 'Sin sesión';
+  const roleLabel = me ? `${me.rol}${me.is_premium ? ' premium' : ''}` : 'Visitante';
+  $('session').textContent = me ? `Sesión activa: ${me.nombre} (${roleLabel})` : 'Sin sesión';
+  $('roleBadge').textContent = roleLabel;
+  $('roleBadge').className = `badge rounded-pill role-badge ${me?.rol === 'mixto' ? 'text-bg-info' : me?.rol === 'autor' ? 'text-bg-warning' : me ? 'text-bg-success' : 'text-bg-secondary'}`;
   $('openRegisterBtn').classList.toggle('d-none', Boolean(me));
   $('openLoginBtn').classList.toggle('d-none', Boolean(me));
   $('logout').classList.toggle('d-none', !me);
-  $('authorCodePanel').classList.toggle('d-none', !me || !['autor', 'mixto'].includes(me.rol));
-  $('guestHelpPanel').classList.toggle('d-none', Boolean(me && ['autor', 'mixto'].includes(me.rol)));
+  $('navAutor').classList.toggle('d-none', !isAutorRole());
+  $('navMixto').classList.toggle('d-none', !isMixtoPremium());
+  $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Inicia sesión para ver módulos por rol.';
+  $('authorCodePanel').classList.toggle('d-none', !isAutorRole());
+  $('guestHelpPanel').classList.toggle('d-none', Boolean(isAutorRole()));
   $('roleUpgradePanel').classList.toggle('d-none', !me || me.rol === 'mixto');
-  $('premiumPanel').classList.toggle('d-none', !me || me.rol !== 'mixto' || !me.is_premium);
+  $('premiumPanel').classList.toggle('d-none', !isMixtoPremium());
 }
 
 function updateRoleUI() {
@@ -294,3 +334,121 @@ $('btnAnalytics').onclick = async () => {
     handleError(error);
   }
 };
+
+
+const requireAutorPanel = () => {
+  if (!isAutorRole()) throw new Error('Necesitas rol autor o mixto para usar este panel.');
+};
+
+$('btnCreateBook').onclick = async () => {
+  try {
+    requireAutorPanel();
+    const result = await api('/api/libros', {
+      method: 'POST',
+      auth: true,
+      body: {
+        titulo: $('bookTitle').value.trim(),
+        anio_publicacion: Number($('bookYear').value),
+        derechos: $('bookRights').value.trim() || 'Autor',
+        visibilidad: $('bookVisibility').value
+      }
+    });
+    showJson('autorOut', result);
+    showSuccess('Libro creado', 'El contenido quedó registrado en el panel de autor.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnCreateCommunity').onclick = async () => {
+  try {
+    requireAutorPanel();
+    const result = await api('/api/comunidades', {
+      method: 'POST',
+      auth: true,
+      body: {
+        tipo: $('communityType').value,
+        descripcion: $('communityDescription').value.trim(),
+        reglas: $('communityRules').value.trim()
+      }
+    });
+    showJson('autorOut', result);
+    showSuccess('Comunidad creada', 'La comunidad quedó lista para lectores.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnCreatePost').onclick = async () => {
+  try {
+    requireAutorPanel();
+    const result = await api('/api/feed/post', {
+      method: 'POST',
+      auth: true,
+      body: { texto: $('postText').value.trim(), etiquetas: $('postTags').value.trim() }
+    });
+    showJson('autorOut', result);
+    showSuccess('Publicación creada', 'Tu promoción fue publicada.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnMixAnalytics').onclick = async () => {
+  try {
+    const id = $('mixAnalyticsCommunityId').value.trim();
+    if (!id) throw new Error('Escribe el ID de comunidad.');
+    const data = await api(`/api/comunidades/${id}/analytics`, { auth: true });
+    showJson('mixtoOut', data);
+    showSuccess('Analítica cargada', 'Se actualizó el panel Mixto Premium.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnModerateMember').onclick = async () => {
+  try {
+    const result = await api('/api/comunidades/members/moderate', {
+      method: 'POST',
+      auth: true,
+      body: {
+        id_comunidad: $('modCommunityId').value.trim(),
+        user_id: $('modUserId').value.trim(),
+        status: $('modStatus').value,
+        moderation_note: $('modNote').value.trim()
+      }
+    });
+    showJson('mixtoOut', result);
+    showSuccess('Moderación aplicada', 'El estado del miembro fue actualizado.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+const appAnswers = [
+  { keys: ['autor', 'cambiar', 'rol'], answer: 'Para cambiar a Autor: inicia sesión, abre Acceso, genera captcha en Cambiar rol, pulsa Generar códigos, pega el código admin y confirma Cambiar rol.' },
+  { keys: ['mixto', 'premium'], answer: 'Mixto Premium conserva lectura y autor, añade analítica, moderación, gráfica de búsquedas/vistas y gestión avanzada de comunidades. Requiere código admin y código premium generado con captcha.' },
+  { keys: ['codigo', 'captcha'], answer: 'Los códigos de registro, cambio de rol y premium se generan con captcha. Vencen en 10 minutos y pueden llegar por SMTP o mostrarse para pruebas si ADMIN_CODE_RESPONSE está activo.' },
+  { keys: ['comunidad', 'moderacion', 'bloquear'], answer: 'En Mixto Premium puedes consultar analítica de comunidad y moderar miembros con estados activo, restringido o bloqueado desde el panel Mixto.' },
+  { keys: ['libro', 'publicar'], answer: 'En el panel Autor puedes crear libros con título, año, derechos y visibilidad pública, privada o borrador. Las búsquedas y vistas alimentan book_events.' },
+  { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' }
+];
+
+const answerBookSocialQuestion = (question) => {
+  const clean = question.toLowerCase();
+  if (!clean.trim()) return 'Escribe una pregunta relacionada con BookSocial.';
+  const hit = appAnswers.find((item) => item.keys.some((key) => clean.includes(key)));
+  if (hit) return hit.answer;
+  return 'Solo puedo ayudar con este aplicativo BookSocial: acceso, roles, autor, mixto premium, libros, comunidades, analítica, moderación, códigos, captcha o despliegue.';
+};
+
+$('btnAskAi').onclick = () => {
+  $('aiAnswer').textContent = answerBookSocialQuestion($('aiQuestion').value);
+};
+
+document.querySelectorAll('.ai-prompt').forEach((button) => {
+  button.onclick = () => {
+    $('aiQuestion').value = button.dataset.question;
+    $('aiAnswer').textContent = answerBookSocialQuestion(button.dataset.question);
+  };
+});

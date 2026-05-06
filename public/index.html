@@ -14,16 +14,44 @@
       <a class="navbar-brand fw-semibold" href="#">
         <i class="bi bi-book-half me-1"></i> BookSocial
       </a>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-light nav-btn" data-tab="home">
+      <div class="d-flex gap-2 flex-wrap align-items-center justify-content-end">
+        <span id="roleBadge" class="badge rounded-pill text-bg-secondary role-badge">Visitante</span>
+        <button class="btn btn-sm btn-outline-light nav-btn primary-nav-btn" data-tab="home" data-label="Home">
           <i class="bi bi-house-door me-1"></i>Home
         </button>
-        <button class="btn btn-sm btn-primary nav-btn" data-tab="perfil">
+        <button class="btn btn-sm btn-primary nav-btn primary-nav-btn" data-tab="perfil" data-label="Acceso">
           <i class="bi bi-person-circle me-1"></i>Acceso
         </button>
       </div>
     </div>
   </nav>
+
+  <div class="secondary-nav border-bottom">
+    <div class="container py-2 d-flex align-items-center gap-2 flex-wrap">
+      <span class="secondary-label"><i class="bi bi-grid-3x3-gap me-1"></i>Aplicaciones</span>
+      <button id="navAutor" class="btn btn-sm btn-outline-warning nav-btn secondary-nav-btn d-none" data-tab="autor" data-label="Panel Autor">
+        <i class="bi bi-pencil-square me-1"></i>Autor
+      </button>
+      <button id="navMixto" class="btn btn-sm btn-outline-info nav-btn secondary-nav-btn d-none" data-tab="mixto" data-label="Mixto Premium">
+        <i class="bi bi-kanban me-1"></i>Mixto
+      </button>
+      <button id="navAssistant" class="btn btn-sm btn-outline-success nav-btn secondary-nav-btn" data-tab="asistente" data-label="Asistente IA">
+        <i class="bi bi-robot me-1"></i>IA / Chat
+      </button>
+      <span id="secondaryHint" class="small text-muted ms-auto">Inicia sesión para ver módulos por rol.</span>
+    </div>
+  </div>
+
+  <div class="breadcrumb-strip">
+    <div class="container py-2">
+      <nav aria-label="Ubicación actual">
+        <ol id="appBreadcrumb" class="breadcrumb app-breadcrumb mb-0">
+          <li class="breadcrumb-item"><i class="bi bi-compass me-1"></i>BookSocial</li>
+          <li class="breadcrumb-item active" aria-current="page">Home</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
 
   <main class="container py-4">
     <div id="flash" class="alert d-none app-alert"></div>
@@ -127,6 +155,121 @@
           <div id="guestHelpPanel" class="app-card h-100">
             <h2 class="h5"><i class="bi bi-info-circle me-2"></i>Antes de obtener código</h2>
             <p class="text-muted mb-0">Primero inicia sesión. Si aún no tienes cuenta autor/mixto, solicita el código admin desde el modal de registro.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-autor" class="tab-section d-none">
+      <div class="section-header mb-3">
+        <div>
+          <span class="badge text-bg-warning mb-2">Panel Autor</span>
+          <h1 class="h4 mb-1">Administrar contenido</h1>
+          <p class="text-muted mb-0">Herramientas principales para libros, comunidades y publicaciones sin sobrecargar la vista.</p>
+        </div>
+      </div>
+      <div class="module-grid">
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-primary"><i class="bi bi-journal-plus"></i></div>
+          <h2 class="h6 mt-3">Crear libro</h2>
+          <p class="small text-muted">Publica una obra pública, privada o borrador.</p>
+          <input id="bookTitle" class="form-control form-control-sm mb-2" placeholder="Título">
+          <input id="bookYear" type="number" class="form-control form-control-sm mb-2" placeholder="Año">
+          <input id="bookRights" class="form-control form-control-sm mb-2" placeholder="Derechos">
+          <select id="bookVisibility" class="form-select form-select-sm mb-2">
+            <option value="publico">Público</option>
+            <option value="privado">Privado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+          <button id="btnCreateBook" class="btn btn-sm btn-primary w-100">Guardar libro</button>
+        </div>
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-success"><i class="bi bi-people"></i></div>
+          <h2 class="h6 mt-3">Crear comunidad</h2>
+          <p class="small text-muted">Organiza lectores por tipo público o privado.</p>
+          <select id="communityType" class="form-select form-select-sm mb-2">
+            <option value="publica">Pública</option>
+            <option value="privada">Privada</option>
+          </select>
+          <textarea id="communityDescription" class="form-control form-control-sm mb-2" rows="2" placeholder="Descripción"></textarea>
+          <textarea id="communityRules" class="form-control form-control-sm mb-2" rows="2" placeholder="Reglas"></textarea>
+          <button id="btnCreateCommunity" class="btn btn-sm btn-success w-100">Guardar comunidad</button>
+        </div>
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-dark"><i class="bi bi-megaphone"></i></div>
+          <h2 class="h6 mt-3">Publicación rápida</h2>
+          <p class="small text-muted">Comparte novedades con lectores y comunidades.</p>
+          <textarea id="postText" class="form-control form-control-sm mb-2" rows="4" placeholder="Mensaje de promoción"></textarea>
+          <input id="postTags" class="form-control form-control-sm mb-2" placeholder="Etiquetas: fantasía, drama">
+          <button id="btnCreatePost" class="btn btn-sm btn-dark w-100">Publicar</button>
+        </div>
+      </div>
+      <pre id="autorOut" class="mt-3 result-box compact-result"></pre>
+    </section>
+
+    <section id="tab-mixto" class="tab-section d-none">
+      <div class="section-header mb-3">
+        <div>
+          <span class="badge text-bg-info mb-2">Mixto Premium</span>
+          <h1 class="h4 mb-1">Gestión avanzada</h1>
+          <p class="text-muted mb-0">Analítica, moderación y lectura administrativa en paneles separados.</p>
+        </div>
+      </div>
+      <div class="module-grid">
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-info"><i class="bi bi-graph-up-arrow"></i></div>
+          <h2 class="h6 mt-3">Analítica de comunidad</h2>
+          <p class="small text-muted">Vistas, búsquedas, miembros y publicaciones para decisiones de mercado.</p>
+          <input id="mixAnalyticsCommunityId" class="form-control form-control-sm mb-2" placeholder="ID comunidad">
+          <button id="btnMixAnalytics" class="btn btn-sm btn-info w-100">Cargar analítica</button>
+        </div>
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-danger"><i class="bi bi-shield-lock"></i></div>
+          <h2 class="h6 mt-3">Moderación</h2>
+          <p class="small text-muted">Bloquea, restringe o reactiva miembros de tu comunidad.</p>
+          <input id="modCommunityId" class="form-control form-control-sm mb-2" placeholder="ID comunidad">
+          <input id="modUserId" class="form-control form-control-sm mb-2" placeholder="ID usuario">
+          <select id="modStatus" class="form-select form-select-sm mb-2">
+            <option value="bloqueado">Bloquear</option>
+            <option value="restringido">Restringir</option>
+            <option value="activo">Reactivar</option>
+          </select>
+          <input id="modNote" class="form-control form-control-sm mb-2" placeholder="Nota administrativa">
+          <button id="btnModerateMember" class="btn btn-sm btn-danger w-100">Aplicar</button>
+        </div>
+        <div class="app-card module-card info-card">
+          <div class="module-icon text-bg-secondary"><i class="bi bi-table"></i></div>
+          <h2 class="h6 mt-3">Tablas usadas</h2>
+          <ul class="small text-muted mb-0">
+            <li>users, autores, libros</li>
+            <li>comunidades, comunidad_members</li>
+            <li>posts, notifications, book_events</li>
+          </ul>
+        </div>
+      </div>
+      <pre id="mixtoOut" class="mt-3 result-box compact-result"></pre>
+    </section>
+
+    <section id="tab-asistente" class="tab-section d-none">
+      <div class="row g-3">
+        <div class="col-lg-5">
+          <div class="app-card h-100">
+            <div class="module-icon text-bg-success"><i class="bi bi-robot"></i></div>
+            <h1 class="h4 mt-3">Asistente IA BookSocial</h1>
+            <p class="text-muted small mb-3">Solo responde preguntas relacionadas con este aplicativo: roles, libros, comunidades, códigos, premium, analítica y despliegue.</p>
+            <div class="quick-prompts">
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo cambio de lector a autor?">Cambio a autor</button>
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Qué incluye mixto premium?">Mixto premium</button>
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo uso comunidades y moderación?">Comunidades</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="app-card h-100">
+            <label class="form-label fw-semibold"><i class="bi bi-chat-dots me-1"></i>Pregunta del aplicativo</label>
+            <textarea id="aiQuestion" class="form-control mb-2" rows="3" placeholder="Ejemplo: ¿cómo genero el código premium para mixto?"></textarea>
+            <button id="btnAskAi" class="btn btn-success w-100 mb-3"><i class="bi bi-send me-1"></i>Preguntar</button>
+            <div id="aiAnswer" class="assistant-answer">Elige una pregunta rápida o escribe una consulta sobre BookSocial.</div>
           </div>
         </div>
       </div>
