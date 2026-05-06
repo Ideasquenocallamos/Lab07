@@ -428,3 +428,26 @@ Además, el libro incluye `link_lectura` para redirigir al panel cliente (estilo
 - Libros privados se muestran solo con `codigo_privado`.
 - Búsqueda por título/referencia con `q` y código privado opcional.
 - Campos nuevos de libro: `etiquetas`, `comentarios_resenas`, `link_lectura`.
+
+
+## 20) Solicitud de código admin por Gmail
+
+Para registrar una cuenta con rol `autor` o `mixto`:
+
+1. Abre **Acceso** > **Registrarse**.
+2. Selecciona rol `Autor` o `Mixto`.
+3. Escribe tu correo Gmail.
+4. Presiona **Generar captcha** en el bloque “Solicitar código admin por Gmail”.
+5. Copia manualmente el texto de la imagen captcha.
+6. Presiona **Solicitar código**.
+7. La app abre Gmail con un correo dirigido a `ADMIN_EMAIL` para que el administrador responda con el código de registro.
+8. Cuando recibas el código por Gmail, pégalo en “Código admin recibido por Gmail” y completa el registro.
+
+Variables relacionadas:
+
+```env
+ADMIN_EMAIL=admin.autor@lab07.com
+ADMIN_REGISTER_CODE=LAB07_ADMIN
+```
+
+> Nota: sin un servicio SMTP externo, la app abre una URL de composición de Gmail para que el usuario envíe manualmente la solicitud al administrador.

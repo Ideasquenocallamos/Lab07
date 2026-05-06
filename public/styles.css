@@ -1,1 +1,71 @@
-body{background:#f4f6fb}.navbar .btn{font-size:.8rem}pre{background:#0f172a;color:#cdd8ff;padding:12px;border-radius:8px;max-height:280px;overflow:auto}.tab-section{background:#fff;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:14px}
+body {
+  min-height: 100vh;
+  background: #f4f6fb;
+}
+
+.app-navbar {
+  background: #171b22;
+}
+
+.tab-section,
+.app-card,
+.hero-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.tab-section {
+  padding: 18px;
+}
+
+.app-card,
+.hero-card {
+  padding: 22px;
+}
+
+.hero-card {
+  border: 1px solid rgba(13, 110, 253, 0.12);
+}
+
+.app-alert {
+  border-radius: 12px;
+}
+
+.result-box {
+  min-height: 120px;
+  max-height: 320px;
+  overflow: auto;
+  background: #0f172a;
+  color: #dbeafe;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.app-modal {
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+}
+
+.admin-request-box {
+  background: #f8fafc;
+}
+
+.captcha-img {
+  min-width: 180px;
+  height: 60px;
+  object-fit: contain;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.small-captcha {
+  min-width: 150px;
+  height: 52px;
+}
+
+.captcha-input {
+  max-width: 180px;
+}

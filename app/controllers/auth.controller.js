@@ -23,6 +23,39 @@ export const getCaptcha = async (req, res) => {
   res.json({ captcha_id, image_base64 });
 };
 
+
+export const requestAdminCode = async (req, res) => {
+  const { email, rol, captcha_id, answer } = req.body;
+  if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || "")) {
+    return res.status(400).json({ message: "Debes usar un correo Gmail válido" });
+  }
+  if (!["autor", "mixto"].includes(rol)) {
+    return res.status(400).json({ message: "El código admin solo aplica para autor o mixto" });
+  }
+
+  const data = captchaStore.get(captcha_id);
+  if (!data || Date.now() > data.expiresAt || String(answer || "").toUpperCase().trim() !== String(data.code).toUpperCase()) {
+    return res.status(400).json({ message: "Captcha inválido o expirado" });
+  }
+  captchaStore.delete(captcha_id);
+
+  const adminEmail = process.env.ADMIN_EMAIL || "admin.autor@lab07.com";
+  const subject = encodeURIComponent(`Solicitud de código admin para rol ${rol}`);
+  const body = encodeURIComponent(`Hola administrador, solicito el código de registro para rol ${rol}.
+Correo Gmail solicitante: ${email}
+
+Por favor responder a este correo con el código autorizado.`);
+  const mailto_url = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
+  const gmail_url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(adminEmail)}&su=${subject}&body=${body}`;
+
+  res.json({
+    message: "Solicitud validada. Envía este correo al administrador desde Gmail para recibir el código en tu correo.",
+    admin_email: adminEmail,
+    gmail_url,
+    mailto_url
+  });
+};
+
 export const revealAuthorCode = async (req, res) => {
   const { captcha_id, answer } = req.body;
   const data = captchaStore.get(captcha_id);
