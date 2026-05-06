@@ -47,6 +47,7 @@ const showJson = (id, data) => { $(id).textContent = JSON.stringify(data, null, 
 const tabMeta = {
   home: { group: 'Principal', label: 'Home' },
   perfil: { group: 'Principal', label: 'Acceso' },
+  lector: { group: 'Aplicaciones', label: 'Panel Lector' },
   autor: { group: 'Aplicaciones', label: 'Panel Autor' },
   mixto: { group: 'Aplicaciones', label: 'Mixto Premium' },
   asistente: { group: 'Aplicaciones', label: 'Asistente IA / Chat' }
@@ -108,6 +109,7 @@ function renderUI() {
   $('openRegisterBtn').classList.toggle('d-none', Boolean(me));
   $('openLoginBtn').classList.toggle('d-none', Boolean(me));
   $('logout').classList.toggle('d-none', !me);
+  $('navLector').classList.toggle('d-none', false);
   $('navAutor').classList.toggle('d-none', !isAutorRole());
   $('navMixto').classList.toggle('d-none', !isMixtoPremium());
   $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Inicia sesión para ver módulos por rol.';
@@ -350,6 +352,16 @@ $('btnCreateBook').onclick = async () => {
         titulo: $('bookTitle').value.trim(),
         anio_publicacion: Number($('bookYear').value),
         derechos: $('bookRights').value.trim() || 'Autor',
+        genero: $('bookGenre').value.trim(),
+        etiquetas: $('bookTags').value.trim(),
+        audiencia_objetivo: $('bookAudience').value.trim(),
+        link_lectura: $('bookReadLink').value.trim(),
+        link_wattpad: $('bookWattpad').value.trim(),
+        link_ao3: $('bookAo3').value.trim(),
+        link_fanfiction: $('bookFanfiction').value.trim(),
+        link_webnovel: $('bookWebnovel').value.trim(),
+        link_google_drive: $('bookDrive').value.trim(),
+        estado_obra: $('bookVisibility').value === 'borrador' ? 'borrador' : 'publicada',
         visibilidad: $('bookVisibility').value
       }
     });
@@ -452,3 +464,69 @@ document.querySelectorAll('.ai-prompt').forEach((button) => {
     $('aiAnswer').textContent = answerBookSocialQuestion(button.dataset.question);
   };
 });
+
+
+const formatBookList = (books) => books.map((book) => ({
+  id: book.id_libro,
+  titulo: book.titulo,
+  autor: book.autore?.nombre_autor || book.autor?.nombre_autor,
+  genero: book.genero,
+  etiquetas: book.etiquetas,
+  visibilidad: book.visibilidad,
+  codigo_beta: book.beta_reader_code,
+  reseñas: book.comentarios_resenas,
+  enlaces: {
+    principal: book.link_lectura,
+    wattpad: book.link_wattpad,
+    ao3: book.link_ao3,
+    fanfiction: book.link_fanfiction,
+    webnovel: book.link_webnovel,
+    drive: book.link_google_drive
+  }
+}));
+
+$('btnReaderSearch').onclick = async () => {
+  try {
+    const q = encodeURIComponent($('readerSearchQ').value.trim());
+    const code = encodeURIComponent($('readerPrivateCode').value.trim());
+    const path = token ? `/api/libros?q=${q}&codigo_privado=${code}&source=lector` : `/api/libros-publicos?q=${q}&source=lector`;
+    const books = await api(path, { auth: Boolean(token) });
+    showJson('lectorOut', formatBookList(books));
+    showSuccess('Obras encontradas', 'Revisa enlaces, reseñas y códigos beta si existen.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnSaveReview').onclick = async () => {
+  try {
+    if (!token) throw new Error('Inicia sesión para guardar reseñas o comentarios.');
+    const id = $('reviewBookId').value.trim();
+    const review = $('reviewText').value.trim();
+    if (!id || !review) throw new Error('Escribe ID de libro y reseña.');
+    const result = await api(`/api/libros/${id}/review`, {
+      method: 'POST',
+      auth: true,
+      body: { texto: review }
+    });
+    showJson('lectorOut', result);
+    showSuccess('Reseña guardada', 'Tu comentario alimenta la información de la obra.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnJoinCommunity').onclick = async () => {
+  try {
+    if (!token) throw new Error('Inicia sesión para entrar a comunidades.');
+    const result = await api('/api/comunidades/join', {
+      method: 'POST',
+      auth: true,
+      body: { id_comunidad: $('joinCommunityId').value.trim(), codigo: $('joinCommunityCode').value.trim() }
+    });
+    showJson('lectorOut', result);
+    showSuccess('Solicitud procesada', 'La comunidad validó tu acceso o restricciones.');
+  } catch (error) {
+    handleError(error);
+  }
+};

@@ -534,3 +534,14 @@ La navegación queda jerarquizada de lo general a lo específico:
 - **Terciaria:** breadcrumb de ubicación con formato `BookSocial > Sección > Módulo` para saber dónde estás.
 
 Para Railway/Nixpacks se incluye `nixpacks.toml` con `npm install --omit=dev`; evita usar la variable antigua `NPM_CONFIG_PRODUCTION=true`, que genera el warning `npm warn config production Use --omit=dev instead`.
+
+## 25) Panel Lector y enlaces de obras
+
+El panel **Lector** permite buscar obras públicas, privadas con código o borradores beta con código, guardar reseñas/comentarios y solicitar entrada a comunidades protegidas.
+
+Campos adicionales de libro usados por la aplicación:
+
+- Enlaces directos: `link_lectura`, `link_wattpad`, `link_ao3`, `link_fanfiction`, `link_webnovel`, `link_google_drive`.
+- Clasificación: `genero`, `etiquetas`, `audiencia_objetivo`, `estado_obra`.
+- Control beta: `beta_reader_code` para lectores prueba/tester de borradores.
+- Comunidad y protección: ingreso por invitación, estados de miembro activo/restringido/bloqueado y reseñas para detectar actividad dañina o ataques a obras.

@@ -197,3 +197,9 @@ body {
 .app-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
   content: ">";
 }
+
+.direct-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

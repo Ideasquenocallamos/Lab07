@@ -29,6 +29,9 @@
   <div class="secondary-nav border-bottom">
     <div class="container py-2 d-flex align-items-center gap-2 flex-wrap">
       <span class="secondary-label"><i class="bi bi-grid-3x3-gap me-1"></i>Aplicaciones</span>
+      <button id="navLector" class="btn btn-sm btn-outline-primary nav-btn secondary-nav-btn" data-tab="lector" data-label="Panel Lector">
+        <i class="bi bi-book me-1"></i>Lector
+      </button>
       <button id="navAutor" class="btn btn-sm btn-outline-warning nav-btn secondary-nav-btn d-none" data-tab="autor" data-label="Panel Autor">
         <i class="bi bi-pencil-square me-1"></i>Autor
       </button>
@@ -160,6 +163,56 @@
       </div>
     </section>
 
+
+
+    <section id="tab-lector" class="tab-section d-none">
+      <div class="section-header mb-3">
+        <div>
+          <span class="badge text-bg-primary mb-2">Panel Lector</span>
+          <h1 class="h4 mb-1">Lectura, reseñas y comunidades</h1>
+          <p class="text-muted mb-0">Busca obras propias o de otros autores, abre enlaces externos y entra a comunidades protegidas.</p>
+        </div>
+      </div>
+      <div class="module-grid">
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-primary"><i class="bi bi-search-heart"></i></div>
+          <h2 class="h6 mt-3">Buscar obras</h2>
+          <p class="small text-muted">Usa título, código privado o beta para borradores de prueba.</p>
+          <input id="readerSearchQ" class="form-control form-control-sm mb-2" placeholder="Título, saga o etiqueta">
+          <input id="readerPrivateCode" class="form-control form-control-sm mb-2" placeholder="Código privado/beta opcional">
+          <button id="btnReaderSearch" class="btn btn-sm btn-primary w-100">Buscar y ordenar</button>
+        </div>
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-success"><i class="bi bi-link-45deg"></i></div>
+          <h2 class="h6 mt-3">Enlaces directos</h2>
+          <p class="small text-muted">Accesos rápidos a plataformas donde el autor puede compartir lectura.</p>
+          <div class="direct-links">
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://www.wattpad.com/">Wattpad</a>
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://archiveofourown.org/">AO3</a>
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://www.fanfiction.net/">FanFiction</a>
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://www.webnovel.com/">Webnovel</a>
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://drive.google.com/">Google Drive</a>
+          </div>
+        </div>
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-warning"><i class="bi bi-chat-square-heart"></i></div>
+          <h2 class="h6 mt-3">Reseña / comentario</h2>
+          <p class="small text-muted">Deja una nota rápida para alimentar comentarios y análisis.</p>
+          <input id="reviewBookId" class="form-control form-control-sm mb-2" placeholder="ID libro">
+          <textarea id="reviewText" class="form-control form-control-sm mb-2" rows="3" placeholder="Reseña, comentario o alerta"></textarea>
+          <button id="btnSaveReview" class="btn btn-sm btn-warning w-100">Guardar reseña</button>
+        </div>
+        <div class="app-card module-card">
+          <div class="module-icon text-bg-danger"><i class="bi bi-shield-check"></i></div>
+          <h2 class="h6 mt-3">Entrar a comunidad</h2>
+          <p class="small text-muted">Respeta reglas; autores/mixtos pueden restringir ataques o actividad dañina.</p>
+          <input id="joinCommunityId" class="form-control form-control-sm mb-2" placeholder="ID comunidad">
+          <input id="joinCommunityCode" class="form-control form-control-sm mb-2" placeholder="Código invitación si es privada">
+          <button id="btnJoinCommunity" class="btn btn-sm btn-danger w-100">Solicitar entrada</button>
+        </div>
+      </div>
+      <pre id="lectorOut" class="mt-3 result-box compact-result"></pre>
+    </section>
     <section id="tab-autor" class="tab-section d-none">
       <div class="section-header mb-3">
         <div>
@@ -176,6 +229,18 @@
           <input id="bookTitle" class="form-control form-control-sm mb-2" placeholder="Título">
           <input id="bookYear" type="number" class="form-control form-control-sm mb-2" placeholder="Año">
           <input id="bookRights" class="form-control form-control-sm mb-2" placeholder="Derechos">
+          <input id="bookGenre" class="form-control form-control-sm mb-2" placeholder="Género / categoría">
+          <input id="bookTags" class="form-control form-control-sm mb-2" placeholder="Etiquetas">
+          <input id="bookAudience" class="form-control form-control-sm mb-2" placeholder="Audiencia objetivo">
+          <input id="bookReadLink" class="form-control form-control-sm mb-2" placeholder="Link principal de lectura">
+          <div class="collapse" id="bookExternalLinks">
+            <input id="bookWattpad" class="form-control form-control-sm mb-2" placeholder="Wattpad URL">
+            <input id="bookAo3" class="form-control form-control-sm mb-2" placeholder="AO3 URL">
+            <input id="bookFanfiction" class="form-control form-control-sm mb-2" placeholder="FanFiction.net URL">
+            <input id="bookWebnovel" class="form-control form-control-sm mb-2" placeholder="Webnovel URL">
+            <input id="bookDrive" class="form-control form-control-sm mb-2" placeholder="Google Drive / borrador URL">
+          </div>
+          <button class="btn btn-sm btn-link px-0" type="button" data-bs-toggle="collapse" data-bs-target="#bookExternalLinks">Agregar enlaces externos</button>
           <select id="bookVisibility" class="form-select form-select-sm mb-2">
             <option value="publico">Público</option>
             <option value="privado">Privado</option>
