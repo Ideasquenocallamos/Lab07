@@ -705,3 +705,11 @@ git push -u github main
 
 Realizar el despliegue completo del **proyecto de la semana 07** usando este mismo flujo.
 
+## 28) Conclusiones del laboratorio (aplicación práctica)
+
+1. **Versionar desde el inicio evita retrabajo**: iniciar con `git init`, revisar `git status` frecuentemente y hacer commits por bloques (`index.js`, `package.json`, configuración) ordena el avance y facilita corregir errores sin perder cambios importantes.
+2. **`package.json` y `yarn.lock` son la base de portabilidad**: en producción no se sube `node_modules`; en su lugar, las dependencias se reconstruyen de forma consistente a partir de estos archivos, lo que reduce fallas por diferencias de entorno.
+3. **La separación entre desarrollo y producción mejora estabilidad**: usar `nodemon` en desarrollo (`yarn dev`) acelera iteraciones, mientras que en producción se debe ejecutar con `npm start`/`node` para un comportamiento más predecible.
+4. **La configuración por variables de entorno es obligatoria**: centralizar credenciales y parámetros (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`) en `.env`/panel del hosting mejora seguridad y permite mover el servicio entre local, GitHub y Render sin cambiar código.
+5. **El despliegue continuo desde GitHub simplifica operación**: conectar el repositorio a Render, definir comandos de build/start y revisar logs permite detectar problemas de conexión o arranque rápidamente y validar el backend con su URL pública.
+
