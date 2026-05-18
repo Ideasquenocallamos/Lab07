@@ -567,3 +567,149 @@ Si tu cuenta ya aparece como `mixto` pero aún no es premium, en **Acceso** se m
 2. Pulsa **Generar códigos** para recibir `admin_code` y `premium_code`.
 3. Pulsa **Cambiar rol** para activar `is_premium=true` sin crear otra cuenta.
 4. Al activarse, aparece el panel **Mixto Premium** con analítica, moderación y tablas expandibles.
+
+## 19) VII. Procedimiento — Desplegar backend Node.js a producción
+
+A continuación se deja el flujo solicitado (Git + Yarn + Render), adaptado al proyecto de este repositorio.
+
+### 19.1 Crear proyecto base
+
+1. Crear carpeta del proyecto y abrir en VS Code:
+```bash
+mkdir despliegue01
+cd despliegue01
+code .
+```
+2. Crear `index.js`.
+
+### 19.2 Inicializar Git
+
+3. Instalar Git (si aún no está instalado).
+4. Inicializar repositorio:
+```bash
+git init
+```
+5. Verificar que exista `.git` (mostrando archivos ocultos).
+6. Revisar ramas:
+```bash
+git branch
+git branch --show-current
+```
+7. Revisar estado:
+```bash
+git status
+```
+8. Agregar archivo inicial:
+```bash
+git add index.js
+```
+9. Configurar identidad Git (una sola vez por equipo):
+```bash
+git config --global user.email "rcoello@tecsup.edu.pe"
+git config --global user.name "Ricardo Coello Palomino"
+```
+10. Primer commit:
+```bash
+git commit -m "Primer commit"
+```
+
+### 19.3 Inicializar Yarn y dependencias
+
+11. Instalar Yarn:
+```bash
+npm install --global yarn
+```
+12. Inicializar proyecto:
+```bash
+yarn init
+```
+13. Revisar estado Git:
+```bash
+git status
+```
+14. Instalar `nodemon` como dependencia de desarrollo:
+```bash
+yarn add nodemon -D
+```
+15. Instalar `dotenv`:
+```bash
+yarn add dotenv -D
+```
+
+### 19.4 Configurar scripts y entorno
+
+16. En `package.json`, agregar scripts (ejemplo):
+```json
+{
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  }
+}
+```
+17. Ejecutar aplicación en desarrollo:
+```bash
+yarn dev
+```
+18. Crear `.env` en raíz con variables necesarias (DB, JWT, PORT, etc.).
+19. Guardar cambios en `index.js` y verificar reinicio automático por nodemon.
+
+### 19.5 Ignorar archivos no versionables
+
+20. Crear `.gitignore` y excluir al menos:
+```gitignore
+node_modules/
+.env
+```
+
+### 19.6 Conectar con repositorio remoto y push
+
+21. Crear repositorio en GitHub.
+22. Agregar remoto (ejemplo):
+```bash
+git remote add github https://github.com/Salvador-Coello-Palomino/repositorybackend.git
+git remote
+```
+23. Flujo de commits sugerido:
+```bash
+git add index.js
+git status
+git add package.json
+git commit -m "Agregamos package.json"
+```
+24. Agregar cambios finales:
+```bash
+git add .
+git status
+git commit -m "Listo para ir a GitHub"
+```
+25. Renombrar rama principal y publicar:
+```bash
+git branch -m main
+git push -u github main
+```
+
+### 19.7 Desplegar en Render
+
+26. Entrar a Render → **New** → **Web Service**.
+27. Conectar con GitHub, autorizar Render e instalar integración.
+28. Seleccionar repositorio y desplegar.
+29. Configurar en Render:
+- Build Command: `npm install --omit=dev`
+- Start Command: `npm start`
+- Variables de entorno: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`.
+30. Ejecutar deploy y copiar URL pública.
+31. Verificar URL en navegador y revisar **Logs** en Render.
+
+### 19.8 Ejercicio de aplicación
+
+Realizar el despliegue completo del **proyecto de la semana 07** usando este mismo flujo.
+
+## 28) Conclusiones del laboratorio (aplicación práctica)
+
+1. **Versionar desde el inicio evita retrabajo**: iniciar con `git init`, revisar `git status` frecuentemente y hacer commits por bloques (`index.js`, `package.json`, configuración) ordena el avance y facilita corregir errores sin perder cambios importantes.
+2. **`package.json` y `yarn.lock` son la base de portabilidad**: en producción no se sube `node_modules`; en su lugar, las dependencias se reconstruyen de forma consistente a partir de estos archivos, lo que reduce fallas por diferencias de entorno.
+3. **La separación entre desarrollo y producción mejora estabilidad**: usar `nodemon` en desarrollo (`yarn dev`) acelera iteraciones, mientras que en producción se debe ejecutar con `npm start`/`node` para un comportamiento más predecible.
+4. **La configuración por variables de entorno es obligatoria**: centralizar credenciales y parámetros (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`) en `.env`/panel del hosting mejora seguridad y permite mover el servicio entre local, GitHub y Render sin cambiar código.
+5. **El despliegue continuo desde GitHub simplifica operación**: conectar el repositorio a Render, definir comandos de build/start y revisar logs permite detectar problemas de conexión o arranque rápidamente y validar el backend con su URL pública.
+
