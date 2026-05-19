@@ -40,7 +40,9 @@ const handleError = (error) => {
 const closeModal = (id) => bootstrap.Modal.getInstance($(id))?.hide();
 window.addEventListener('error', (event) => handleError(event.error || new Error(event.message)));
 window.addEventListener('unhandledrejection', (event) => handleError(event.reason));
+const SUPERVISOR_EMAIL = 'andersson.guevara.b@tecsup.edu.pe';
 const isGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || '');
+const isSupervisorEmail = (email) => String(email || '').trim().toLowerCase() === SUPERVISOR_EMAIL;
 const isAutorRole = () => me && ['autor', 'mixto', 'supervisor'].includes(me.rol);
 const isMixtoPremium = () => me?.rol === 'supervisor' || (me?.rol === 'mixto' && me?.is_premium);
 const showJson = (id, data) => { $(id).textContent = JSON.stringify(data, null, 2); };
@@ -279,7 +281,7 @@ $('signin').onclick = async () => {
     const email = $('logEmail').value.trim();
     const password = $('logPass').value;
     if (!email || !password) throw new Error('Completa Gmail y contraseña.');
-    if (!isGmail(email)) throw new Error('Debes iniciar sesión con un correo @gmail.com.');
+    if (!isGmail(email) && !isSupervisorEmail(email)) throw new Error('Debes iniciar sesión con Gmail o con el correo interno de supervisor.');
     let data;
     try {
       data = await api('/api/auth/signin', {
