@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Supervisor Premium</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 30px;
+            font-size: 24px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin: 15px 0;
+        }
+
+        .sidebar a {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: block;
+            padding: 12px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background: #667eea;
+            padding-left: 25px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 30px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #7f8c8d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Status Badges */
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-suspended {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #2c3e50;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .premium-badge {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>🔐 SUPERVISOR</h2>
+            <ul>
+                <li><a class="nav-link active" data-section="dashboard">📊 Dashboard</a></li>
+                <li><a class="nav-link" data-section="users">👥 Gestionar Usuarios</a></li>
+                <li><a class="nav-link" data-section="apps">📱 Gestionar Apps</a></li>
+                <li><a class="nav-link" data-section="audit">📋 Auditoría</a></li>
+                <li><a class="nav-link" data-section="permissions">🔑 Permisos</a></li>
+                <li style="margin-top: 30px; border-top: 1px solid #444; padding-top: 20px;">
+                    <a onclick="logout()">🚪 Cerrar Sesión</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1>Panel de Control - Supervisor Premium</h1>
+                <div class="user-info">
+                    <span id="userName">Usuario</span>
+                    <span class="user-badge premium-badge">PREMIUM</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total de Usuarios</h3>
+                        <div class="number" id="totalUsers">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total de Apps</h3>
+                        <div class="number" id="totalApps">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Apps Activas</h3>
+                        <div class="number" id="activeApps">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Apps Suspendidas</h3>
+                        <div class="number" id="suspendedApps">0</div>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 30px; margin-bottom: 20px;">Actividad Reciente</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Acción</th>
+                                <th>Tipo</th>
+                                <th>ID Objetivo</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActivityBody">
+                            <tr><td colspan="4" style="text-align: center;">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section id="users" class="section">
+                <h2 style="margin-bottom: 20px;">Gestión de Usuarios</h2>
+                <div class="search-box">
+                    <input type="text" id="userSearch" placeholder="Buscar usuario por nombre o email...">
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Premium</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Cargando usuarios...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Apps Section -->
+            <section id="apps" class="section">
+                <h2 style="margin-bottom: 20px;">Gestión de Aplicaciones</h2>
+                <div class="search-box">
+                    <input type="text" id="appSearch" placeholder="Buscar aplicación...">
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Propietario</th>
+                                <th>Estado</th>
+                                <th>Versión</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appsTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Cargando aplicaciones...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Audit Section -->
+            <section id="audit" class="section">
+                <h2 style="margin-bottom: 20px;">Registro de Auditoría</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Supervisor</th>
+                                <th>Acción</th>
+                                <th>Tipo</th>
+                                <th>ID Objetivo</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody">
+                            <tr><td colspan="5" style="text-align: center;">Cargando auditoría...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Permissions Section -->
+            <section id="permissions" class="section">
+                <h2 style="margin-bottom: 20px;">Gestión de Permisos</h2>
+                <div id="permissionsContent">
+                    <p style="text-align: center; color: #7f8c8d;">Solo supervisores premium pueden gestionar permisos</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Modificar Usuario</h2>
+            </div>
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="modalUserName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="modalUserEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select id="modalUserRole">
+                        <option value="lector">Lector</option>
+                        <option value="autor">Autor</option>
+                        <option value="mixto">Mixto</option>
+                        <option value="supervisor">Supervisor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="modalUserPremium"> Premium
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeUserModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="suspendModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Suspender Aplicación</h2>
+            </div>
+            <form id="suspendForm">
+                <div class="form-group">
+                    <label>Razón de Suspensión</label>
+                    <textarea id="suspendReason" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeSuspendModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Suspender</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let token = localStorage.getItem('token');
+        let currentUserId = null;
+        let currentAppId = null;
+
+        // Navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.dataset.section;
+                switchSection(section);
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+            });
+        });
+
+        function switchSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+
+            if (section === 'dashboard') loadDashboard();
+            else if (section === 'users') loadUsers();
+            else if (section === 'apps') loadApps();
+            else if (section === 'audit') loadAuditLogs();
+        }
+
+        // Load Dashboard
+        async function loadDashboard() {
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                document.getElementById('totalUsers').textContent = data.stats.totalUsers;
+                document.getElementById('totalApps').textContent = data.stats.totalApps;
+                document.getElementById('activeApps').textContent = data.stats.activeApps;
+                document.getElementById('suspendedApps').textContent = data.stats.suspendedApps;
+
+                const tbody = document.getElementById('recentActivityBody');
+                tbody.innerHTML = data.recentActivity.map(log => `
+                    <tr>
+                        <td>${log.action}</td>
+                        <td><span class="badge badge-active">${log.target_type}</span></td>
+                        <td>${log.target_id}</td>
+                        <td>${new Date(log.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // Load Users
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const users = await res.json();
+                
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.nombre}</td>
+                        <td>${user.email}</td>
+                        <td>${user.rol}</td>
+                        <td>${user.is_premium ? '✓' : '✗'}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-primary" onclick="openUserModal(${user.id}, '${user.nombre}', '${user.email}', '${user.rol}', ${user.is_premium})">Editar</button>
+                                <button class="btn btn-sm btn-danger" onclick="disableUser(${user.id})">Deshabilitar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // Load Apps
+        async function loadApps() {
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/apps`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const apps = await res.json();
+                
+                const tbody = document.getElementById('appsTableBody');
+                tbody.innerHTML = apps.map(app => `
+                    <tr>
+                        <td>${app.id}</td>
+                        <td>${app.app_name}</td>
+                        <td>${app.owner_id}</td>
+                        <td><span class="badge badge-${app.status === 'active' ? 'active' : 'suspended'}">${app.status}</span></td>
+                        <td>${app.version}</td>
+                        <td>
+                            <div class="action-buttons">
+                                ${app.status === 'active' ? 
+                                    `<button class="btn btn-sm btn-warning" onclick="openSuspendModal(${app.id})">Suspender</button>` :
+                                    `<button class="btn btn-sm btn-success" onclick="reactivateApp(${app.id})">Reactivar</button>`
+                                }
+                                <button class="btn btn-sm btn-danger" onclick="deleteApp(${app.id})">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading apps:', error);
+            }
+        }
+
+        // Load Audit Logs
+        async function loadAuditLogs() {
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/audit-logs`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const logs = await res.json();
+                
+                const tbody = document.getElementById('auditTableBody');
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${log.supervisor_id}</td>
+                        <td>${log.action}</td>
+                        <td>${log.target_type}</td>
+                        <td>${log.target_id}</td>
+                        <td>${new Date(log.created_at).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+            }
+        }
+
+        // User Modal
+        function openUserModal(userId, nombre, email, rol, isPremium) {
+            currentUserId = userId;
+            document.getElementById('modalUserName').value = nombre;
+            document.getElementById('modalUserEmail').value = email;
+            document.getElementById('modalUserRole').value = rol;
+            document.getElementById('modalUserPremium').checked = isPremium;
+            document.getElementById('userModal').classList.add('show');
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('show');
+        }
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/users/${currentUserId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('modalUserName').value,
+                        email: document.getElementById('modalUserEmail').value,
+                        rol: document.getElementById('modalUserRole').value,
+                        is_premium: document.getElementById('modalUserPremium').checked
+                    })
+                });
+                if (res.ok) {
+                    alert('Usuario actualizado');
+                    closeUserModal();
+                    loadUsers();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Suspend Modal
+        function openSuspendModal(appId) {
+            currentAppId = appId;
+            document.getElementById('suspendModal').classList.add('show');
+        }
+
+        function closeSuspendModal() {
+            document.getElementById('suspendModal').classList.remove('show');
+        }
+
+        document.getElementById('suspendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/apps/${currentAppId}/suspend`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reason: document.getElementById('suspendReason').value
+                    })
+                });
+                if (res.ok) {
+                    alert('Aplicación suspendida');
+                    closeSuspendModal();
+                    loadApps();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Actions
+        async function disableUser(userId) {
+            if (confirm('¿Estás seguro de que deseas deshabilitar este usuario?')) {
+                try {
+                    const res = await fetch(`${API_BASE}/supervisor/users/${userId}/disable`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason: 'Deshabilitado por supervisor' })
+                    });
+                    if (res.ok) {
+                        alert('Usuario deshabilitado');
+                        loadUsers();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        async function reactivateApp(appId) {
+            try {
+                const res = await fetch(`${API_BASE}/supervisor/apps/${appId}/reactivate`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    alert('Aplicación reactivada');
+                    loadApps();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deleteApp(appId) {
+            if (confirm('¿Estás seguro de que deseas eliminar esta aplicación?')) {
+                try {
+                    const res = await fetch(`${API_BASE}/supervisor/apps/${appId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        alert('Aplicación eliminada');
+                        loadApps();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        // Initialize
+        loadDashboard();
+    </script>
+</body>
+</html>

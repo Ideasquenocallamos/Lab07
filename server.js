@@ -8,6 +8,7 @@ import chatRoutes from "./app/routes/chat.routes.js";
 import comunidadRoutes from "./app/routes/comunidad.routes.js";
 import salaRoutes from "./app/routes/sala.routes.js";
 import socialRoutes from "./app/routes/social.routes.js";
+import supervisorRoutes from "./app/routes/supervisor.routes.js";
 
 const app = express();
 app.use(cors({ origin: "*" }));
@@ -23,6 +24,7 @@ app.use(chatRoutes);
 app.use(comunidadRoutes);
 app.use(salaRoutes);
 app.use(socialRoutes);
+app.use(supervisorRoutes);
 
 app.get("/api/health", async (req, res) => {
   try {
