@@ -713,3 +713,25 @@ Realizar el despliegue completo del **proyecto de la semana 07** usando este mis
 4. **La configuración por variables de entorno es obligatoria**: centralizar credenciales y parámetros (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`) en `.env`/panel del hosting mejora seguridad y permite mover el servicio entre local, GitHub y Render sin cambiar código.
 5. **El despliegue continuo desde GitHub simplifica operación**: conectar el repositorio a Render, definir comandos de build/start y revisar logs permite detectar problemas de conexión o arranque rápidamente y validar el backend con su URL pública.
 
+
+
+## Supervisor oculto y Gmail SMTP
+
+1. El rol **Supervisor** no aparece en la navegación pública.
+2. Inicia sesión con el correo interno `andersson.guevara.b@tecsup.edu.pe`.
+3. Tras validar credenciales, la app pedirá captcha y recién luego abrirá sesión de supervisor.
+4. Para envío real por Gmail configura variables:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu_gmail@gmail.com
+SMTP_PASS=tu_app_password
+ADMIN_EMAIL=andersson.guevara.b@tecsup.edu.pe
+```
+
+5. Usa contraseña de aplicación de Gmail (App Password), no tu clave principal.
+6. Si SMTP no está configurado, la app no se bloquea: mostrará fallback en respuestas.
+
+### API Chatbot
+- `POST /api/chat/ask` con body `{ "pregunta": "..." }` para respuestas guiadas del aplicativo (supervisor, enlaces 404, IA y Gmail).
