@@ -41,8 +41,8 @@ const closeModal = (id) => bootstrap.Modal.getInstance($(id))?.hide();
 window.addEventListener('error', (event) => handleError(event.error || new Error(event.message)));
 window.addEventListener('unhandledrejection', (event) => handleError(event.reason));
 const isGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || '');
-const isAutorRole = () => me && ['autor', 'mixto'].includes(me.rol);
-const isMixtoPremium = () => me?.rol === 'mixto' && me?.is_premium;
+const isAutorRole = () => me && ['autor', 'mixto', 'supervisor'].includes(me.rol);
+const isMixtoPremium = () => me?.rol === 'supervisor' || (me?.rol === 'mixto' && me?.is_premium);
 const showJson = (id, data) => { $(id).textContent = JSON.stringify(data, null, 2); };
 const tabMeta = {
   home: { group: 'Principal', label: 'Home' },
@@ -50,7 +50,8 @@ const tabMeta = {
   lector: { group: 'Aplicaciones', label: 'Panel Lector' },
   autor: { group: 'Aplicaciones', label: 'Panel Autor' },
   mixto: { group: 'Aplicaciones', label: 'Mixto Premium' },
-  asistente: { group: 'Aplicaciones', label: 'Asistente IA / Chat' }
+  asistente: { group: 'Aplicaciones', label: 'Asistente IA / Chat' },
+  supervisor: { group: 'Aplicaciones', label: 'Supervisor' }
 };
 
 async function api(path, { method = 'GET', body, auth = false } = {}) {
@@ -96,9 +97,10 @@ function updateBreadcrumb(tabName) {
 
 function resolveAllowedTab(tabName) {
   const target = maybe(`tab-${tabName}`) ? tabName : 'home';
-  if (!me && ['lector', 'autor', 'mixto'].includes(target)) return 'asistente';
+  if (!me && ['lector', 'autor', 'mixto', 'supervisor'].includes(target)) return 'asistente';
   if (target === 'autor' && !isAutorRole()) return me ? 'lector' : 'asistente';
   if (target === 'mixto' && !isMixtoPremium()) return me ? 'lector' : 'asistente';
+  if (target === 'supervisor' && me?.rol !== 'supervisor') return me ? 'lector' : 'asistente';
   return target;
 }
 
@@ -138,7 +140,7 @@ function setupFieldAutosave() {
 }
 
 function setupPanelModuleNavigation() {
-  document.querySelectorAll('#tab-lector, #tab-autor, #tab-mixto').forEach((section) => {
+  document.querySelectorAll('#tab-lector, #tab-autor, #tab-mixto, #tab-supervisor').forEach((section) => {
     const grid = section.querySelector('.module-grid');
     if (!grid || grid.closest('.panel-workspace')) return;
     section.classList.add('panel-section');
@@ -189,14 +191,15 @@ function renderUI() {
   const roleLabel = me ? `${me.rol}${me.is_premium ? ' premium' : ''}` : 'Visitante';
   $('session').textContent = me ? `Sesión activa: ${me.nombre} (${roleLabel})` : 'Sin sesión';
   $('roleBadge').textContent = roleLabel;
-  $('roleBadge').className = `badge rounded-pill role-badge ${me?.rol === 'mixto' ? 'text-bg-info' : me?.rol === 'autor' ? 'text-bg-warning' : me ? 'text-bg-success' : 'text-bg-secondary'}`;
+  $('roleBadge').className = `badge rounded-pill role-badge ${me?.rol === 'supervisor' ? 'text-bg-danger' : me?.rol === 'mixto' ? 'text-bg-info' : me?.rol === 'autor' ? 'text-bg-warning' : me ? 'text-bg-success' : 'text-bg-secondary'}`;
   $('openRegisterBtn').classList.toggle('d-none', Boolean(me));
   $('openLoginBtn').classList.toggle('d-none', Boolean(me));
   $('logout').classList.toggle('d-none', !me);
   $('navLector').classList.toggle('d-none', !me);
   $('navAutor').classList.toggle('d-none', !isAutorRole());
   $('navMixto').classList.toggle('d-none', !isMixtoPremium());
-  $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
+  $('navSupervisor').classList.toggle('d-none', me?.rol !== 'supervisor');
+  $('secondaryHint').textContent = me?.rol === 'supervisor' ? 'Supervisor activo: pruebas, enlaces e informes.' : me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
   $('authorCodePanel').classList.toggle('d-none', !isAutorRole());
   $('guestHelpPanel').classList.toggle('d-none', Boolean(isAutorRole()));
   const canUpgrade = Boolean(me && !isMixtoPremium());
@@ -261,6 +264,17 @@ $('signup').onclick = async () => {
   }
 };
 
+$('btnLoginCaptcha').onclick = async () => {
+  try {
+    const captcha = await api('/api/auth/captcha');
+    loginCaptchaId = captcha.captcha_id;
+    $('loginCaptchaImg').src = captcha.image_base64;
+    showSuccess('Captcha supervisor generado', 'Escribe el código para completar la verificación de identidad.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 $('signin').onclick = async () => {
   try {
     const email = $('logEmail').value.trim();
@@ -269,7 +283,7 @@ $('signin').onclick = async () => {
     if (!isGmail(email)) throw new Error('Debes iniciar sesión con un correo @gmail.com.');
     const data = await api('/api/auth/signin', {
       method: 'POST',
-      body: { email, password }
+      body: { email, password, captcha_id: loginCaptchaId, answer: $('loginCaptchaAnswer').value.trim() }
     });
     token = data.accessToken;
     me = data;
@@ -668,7 +682,9 @@ const appAnswers = [
   { keys: ['lector', 'enlaces', 'wattpad', 'ao3', 'fanfiction', 'webnovel', 'drive'], answer: 'El panel Lector permite buscar obras con filtros por género, estado, audiencia y año; si no tienes cuenta solo verás la aplicación IA / Chat desde la navegación de aplicaciones.' },
   { keys: ['tabla', 'tablas', 'registros'], answer: 'En Mixto Premium, abre Tablas usadas y pulsa Ver mis registros privados. Solo verás datos vinculados a tu cuenta; cada registro está oculto con ojito y al mostrar uno se oculta cualquier otro abierto.' },
   { keys: ['ataque', 'ataques', 'proteccion', 'proteger'], answer: 'Para proteger comunidades usa invitación privada, reglas claras y moderación Mixto Premium: activo, restringido o bloqueado. Las reseñas/eventos ayudan a detectar actividad dañina.' },
-  { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' }
+  { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' },
+  { keys: ['supervisor', '404', 'inhabilitar', 'informe'], answer: 'El rol Supervisor es interno y no se registra. Entra con el correo autorizado, completa captcha, valida enlaces y documenta motivos para inhabilitar o reactivar libros; estos informes alimentan la búsqueda IA.' },
+  { keys: ['busca', 'buscar', 'reseñas', 'inteligente'], answer: 'El buscador IA usa título, género, etiquetas, audiencia, reseñas e informes del supervisor para recomendar libros activos y evitar obras inhabilitadas.' }
 ];
 
 const answerBookSocialQuestion = (question) => {
@@ -691,6 +707,48 @@ document.querySelectorAll('.ai-prompt').forEach((button) => {
 });
 
 
+
+$('btnSmartBookSearch').onclick = async () => {
+  try {
+    const q = $('smartBookSearch').value.trim();
+    if (!q) throw new Error('Escribe qué libro quieres encontrar con IA.');
+    const data = await api(`/api/libros/ai-search?q=${encodeURIComponent(q)}`);
+    showJson('smartBookOut', data);
+    $('aiAnswer').textContent = data.respuesta;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnSupervisorValidateLinks').onclick = async () => {
+  try {
+    const id = $('supValidateBookId').value.trim();
+    if (!id) throw new Error('Escribe el ID del libro a validar.');
+    const result = await api(`/api/libros/${id}/validate-links`, { method: 'POST', auth: true });
+    showJson('supervisorOut', result);
+    showSuccess('Validación de enlaces completada', 'Revisa si hay 404, URL inválida o advertencias de conexión.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnSupervisorReport').onclick = async () => {
+  try {
+    const id = $('supReportBookId').value.trim();
+    const motivo = $('supReportReason').value.trim();
+    if (!id || !motivo) throw new Error('Escribe ID de libro y motivo del informe.');
+    const result = await api(`/api/libros/${id}/supervisor-report`, {
+      method: 'POST',
+      auth: true,
+      body: { action: $('supReportAction').value, motivo }
+    });
+    showJson('supervisorOut', result);
+    showSuccess('Informe supervisor guardado', 'El estado del libro y la documentación quedaron registrados para alimentar la IA.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 const formatBookList = (books) => books.map((book) => ({
   id: book.id_libro,
   titulo: book.titulo,
@@ -698,6 +756,8 @@ const formatBookList = (books) => books.map((book) => ({
   genero: book.genero,
   etiquetas: book.etiquetas,
   visibilidad: book.visibilidad,
+  estado: book.estado_obra,
+  motivo_suspension: book.suspension_reason,
   codigo_beta: book.beta_reader_code,
   reseñas: book.comentarios_resenas,
   enlaces: {

@@ -6,7 +6,7 @@ export default (sequelize, Sequelize) => {
     nombre: { type: Sequelize.STRING, allowNull: false, field: "username" },
     email: { type: Sequelize.STRING, allowNull: false, unique: true },
     password: { type: Sequelize.STRING, allowNull: false },
-    rol: { type: Sequelize.ENUM("autor", "lector", "mixto"), allowNull: false, defaultValue: "lector" },
+    rol: { type: Sequelize.ENUM("autor", "lector", "mixto", "supervisor"), allowNull: false, defaultValue: "lector" },
     author_code: { type: Sequelize.STRING, allowNull: true, unique: true },
     is_premium: { type: Sequelize.BOOLEAN, defaultValue: false },
     incognito_mode: { type: Sequelize.BOOLEAN, defaultValue: false },
