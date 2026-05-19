@@ -427,6 +427,7 @@
             <option value="inhabilitar">Inhabilitar / suspender</option>
             <option value="reactivar">Reactivar en revisión</option>
           </select>
+          <select id="supActionMode" class="form-select form-select-sm mb-2"><option value="real">Acción real (aplica cambios)</option><option value="prueba">Acción prueba (solo informe IA)</option></select>
           <textarea id="supReportReason" class="form-control form-control-sm mb-2" rows="4" placeholder="Motivo visible: enlace 404, libro no existente, datos corregidos manualmente..."></textarea>
           <button id="btnSupervisorReport" class="btn btn-sm btn-warning w-100">Guardar informe</button>
         </div>
@@ -447,7 +448,8 @@
           <button id="btnSupervisorQueue" class="btn btn-sm btn-dark w-100 mb-2">Cargar cola de revisión</button>
           <input id="supDeleteBookId" class="form-control form-control-sm mb-2" placeholder="ID libro para eliminar">
           <textarea id="supDeleteReason" class="form-control form-control-sm mb-2" rows="2" placeholder="Motivo de eliminación para auditoría e IA"></textarea>
-          <button id="btnSupervisorDelete" class="btn btn-sm btn-outline-danger w-100">Eliminar libro por supervisor</button>
+          <button id="btnSupervisorDelete" class="btn btn-sm btn-outline-danger w-100 mb-2">Eliminar libro por supervisor</button>
+          <button id="btnSupervisorRoot" class="btn btn-sm btn-outline-dark w-100">Ver base total (root)</button>
         </div>
 
       </div>

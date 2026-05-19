@@ -762,7 +762,7 @@ $('btnSupervisorReport').onclick = async () => {
     const result = await api(`/api/libros/${id}/supervisor-report`, {
       method: 'POST',
       auth: true,
-      body: { action: $('supReportAction').value, motivo }
+      body: { action: $('supReportAction').value, action_mode: $('supActionMode').value, motivo }
     });
     showJson('supervisorOut', result);
     showSuccess('Informe supervisor guardado', 'El estado del libro y la documentación quedaron registrados para alimentar la IA.');
@@ -868,6 +868,17 @@ $('btnSupervisorDelete').onclick = async () => {
     });
     showJson('supervisorOut', result);
     showSuccess('Eliminación supervisor aplicada', 'El registro quedó auditado para IA y trazabilidad.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+$('btnSupervisorRoot').onclick = async () => {
+  try {
+    const result = await api('/api/admin/root-snapshot', { auth: true });
+    showJson('supervisorOut', result);
+    showSuccess('Vista root cargada', 'Supervisor premium ahora ve datos globales de toda la base en modo auditoría.');
   } catch (error) {
     handleError(error);
   }

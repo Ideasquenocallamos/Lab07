@@ -211,20 +211,21 @@ export const supervisorReportLibro = async (req, res) => {
     const libro = await Libro.findByPk(req.params.id);
     if (!libro) return res.status(404).json({ message: "Libro no encontrado" });
     const action = req.body.action || "inhabilitar";
+    const actionMode = req.body.action_mode === "prueba" ? "prueba" : "real";
     const motivo = String(req.body.motivo || req.body.reporte || "Caso revisado por supervisor.").trim();
     const linkValidation = await validateBookLinks(libro.toJSON(), { requireClean: false });
-    if (action === "inhabilitar") {
+    if (actionMode === "real" && action === "inhabilitar") {
       libro.estado_obra = "inhabilitada";
       libro.suspension_reason = motivo;
-    } else if (action === "reactivar") {
+    } else if (actionMode === "real" && action === "reactivar") {
       libro.estado_obra = "en_revision";
       libro.suspension_reason = null;
     }
     libro.link_validation_report = JSON.stringify(linkValidation);
-    appendSupervisorReport(libro, `${action.toUpperCase()}: ${motivo}`);
+    appendSupervisorReport(libro, `${actionMode.toUpperCase()} | ${action.toUpperCase()}: ${motivo}`);
     await libro.save();
-    await trackBookEvent({ req, id_libro: libro.id_libro, event_type: "informe_supervisor", source: "supervisor", metadata: { action, motivo, linkValidation } });
-    res.json({ message: action === "inhabilitar" ? "Libro suspendido/inhabilitado con informe de confianza." : "Libro reactivado en revisión.", libro, link_validation: linkValidation });
+    await trackBookEvent({ req, id_libro: libro.id_libro, event_type: "informe_supervisor", source: "supervisor", metadata: { action, action_mode: actionMode, motivo, linkValidation } });
+    res.json({ message: actionMode === "prueba" ? "Simulación registrada: no se alteró estado del libro, solo informe para IA." : action === "inhabilitar" ? "Libro suspendido/inhabilitado con informe de confianza." : "Libro reactivado en revisión.", libro, action_mode: actionMode, link_validation: linkValidation });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
