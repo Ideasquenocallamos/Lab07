@@ -75,7 +75,8 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
     if (auth && response.status === 401) {
       token = '';
       me = null;
-      localStorage.clear();
+      localStorage.removeItem('token');
+      localStorage.removeItem('me');
       renderUI();
       throw new Error('Sesión inválida, inicia sesión de nuevo');
     }
@@ -107,6 +108,81 @@ function showTab(tabName) {
   $(`tab-${target}`).classList.remove('d-none');
   document.querySelectorAll('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.tab === target));
   updateBreadcrumb(target);
+}
+
+
+const draftStorageKey = 'booksocial:auto-drafts:v1';
+let savedDrafts = {};
+try {
+  savedDrafts = JSON.parse(localStorage.getItem(draftStorageKey) || '{}');
+} catch {
+  localStorage.removeItem(draftStorageKey);
+}
+
+const saveDraftValue = (field) => {
+  if (!field.id || field.type === 'password' || field.closest('.result-box')) return;
+  savedDrafts[field.id] = field.type === 'checkbox' ? field.checked : field.value;
+  localStorage.setItem(draftStorageKey, JSON.stringify(savedDrafts));
+};
+
+function setupFieldAutosave() {
+  document.querySelectorAll('input[id], textarea[id], select[id]').forEach((field) => {
+    if (field.type === 'password' || field.closest('.result-box')) return;
+    if (Object.prototype.hasOwnProperty.call(savedDrafts, field.id)) {
+      if (field.type === 'checkbox') field.checked = Boolean(savedDrafts[field.id]);
+      else field.value = savedDrafts[field.id];
+    }
+    field.addEventListener('input', () => saveDraftValue(field));
+    field.addEventListener('change', () => saveDraftValue(field));
+  });
+}
+
+function setupPanelModuleNavigation() {
+  document.querySelectorAll('#tab-lector, #tab-autor, #tab-mixto').forEach((section) => {
+    const grid = section.querySelector('.module-grid');
+    if (!grid || grid.closest('.panel-workspace')) return;
+    section.classList.add('panel-section');
+    const panelKey = section.id.replace('tab-', '');
+    const cards = [...grid.querySelectorAll('.module-card')];
+    const workspace = document.createElement('div');
+    workspace.className = 'panel-workspace';
+    const miniNav = document.createElement('nav');
+    miniNav.className = 'panel-mini-nav';
+    miniNav.setAttribute('aria-label', `Mini barra de ${tabMeta[panelKey]?.label || panelKey}`);
+    miniNav.innerHTML = '<div class="panel-mini-title"><i class="bi bi-layout-sidebar me-1"></i>Secciones</div>';
+
+    const activateModule = (index) => {
+      cards.forEach((card, cardIndex) => card.classList.toggle('active-module', cardIndex === index));
+      miniNav.querySelectorAll('.panel-mini-btn').forEach((button, buttonIndex) => {
+        button.classList.toggle('active', buttonIndex === index);
+        button.setAttribute('aria-pressed', String(buttonIndex === index));
+      });
+      localStorage.setItem(`booksocial:active-module:${panelKey}`, String(index));
+    };
+
+    cards.forEach((card, index) => {
+      const heading = card.querySelector('h2')?.textContent?.trim() || `Sección ${index + 1}`;
+      const label = card.dataset.moduleLabel || heading;
+      const icon = card.dataset.moduleIcon || 'bi-grid';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'panel-mini-btn';
+      button.setAttribute('aria-pressed', 'false');
+      button.innerHTML = `<i class="bi ${icon}"></i><span>${label}</span>`;
+      button.addEventListener('click', () => activateModule(index));
+      miniNav.appendChild(button);
+    });
+
+    section.insertBefore(workspace, grid);
+    workspace.append(miniNav, grid);
+    const storedIndex = Number(localStorage.getItem(`booksocial:active-module:${panelKey}`));
+    activateModule(Number.isInteger(storedIndex) && storedIndex >= 0 && storedIndex < cards.length ? storedIndex : 0);
+
+    const hint = document.createElement('p');
+    hint.className = 'autosave-hint';
+    hint.innerHTML = '<i class="bi bi-save2 me-1"></i>Autoguardado activo: tus campos se conservan al cambiar de sección.';
+    miniNav.appendChild(hint);
+  });
 }
 
 function renderUI() {
@@ -154,6 +230,8 @@ function updateRoleUI() {
     : 'Para lector no necesitas código admin.';
 }
 
+setupFieldAutosave();
+setupPanelModuleNavigation();
 renderUI();
 updateRoleUI();
 
@@ -208,7 +286,8 @@ $('signin').onclick = async () => {
 $('logout').onclick = () => {
   token = '';
   me = null;
-  localStorage.clear();
+  localStorage.removeItem('token');
+  localStorage.removeItem('me');
   renderUI();
   showSuccess('Sesión cerrada', 'Saliste correctamente de BookSocial.');
 };

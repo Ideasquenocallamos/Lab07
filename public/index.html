@@ -192,7 +192,7 @@
         </div>
       </div>
       <div class="module-grid">
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Buscar obras" data-module-icon="bi-search-heart">
           <div class="module-icon text-bg-primary"><i class="bi bi-search-heart"></i></div>
           <h2 class="h6 mt-3">Buscar obras</h2>
           <p class="small text-muted">Usa título, código privado o beta para borradores de prueba.</p>
@@ -214,7 +214,7 @@
           <input id="readerPrivateCode" class="form-control form-control-sm mb-2" placeholder="Código privado/beta opcional">
           <button id="btnReaderSearch" class="btn btn-sm btn-primary w-100">Buscar con filtros</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Enlaces directos" data-module-icon="bi-link-45deg">
           <div class="module-icon text-bg-success"><i class="bi bi-link-45deg"></i></div>
           <h2 class="h6 mt-3">Enlaces directos</h2>
           <p class="small text-muted">Accesos rápidos a plataformas donde el autor puede compartir lectura.</p>
@@ -226,7 +226,7 @@
             <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://drive.google.com/">Google Drive</a>
           </div>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Reseña" data-module-icon="bi-chat-square-heart">
           <div class="module-icon text-bg-warning"><i class="bi bi-chat-square-heart"></i></div>
           <h2 class="h6 mt-3">Reseña / comentario</h2>
           <p class="small text-muted">Deja una nota rápida para alimentar comentarios y análisis.</p>
@@ -234,7 +234,7 @@
           <textarea id="reviewText" class="form-control form-control-sm mb-2" rows="3" placeholder="Reseña, comentario o alerta"></textarea>
           <button id="btnSaveReview" class="btn btn-sm btn-warning w-100">Guardar reseña</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Entrar a comunidad" data-module-icon="bi-shield-check">
           <div class="module-icon text-bg-danger"><i class="bi bi-shield-check"></i></div>
           <h2 class="h6 mt-3">Entrar a comunidad</h2>
           <p class="small text-muted">Respeta reglas; autores/mixtos pueden restringir ataques o actividad dañina.</p>
@@ -254,7 +254,7 @@
         </div>
       </div>
       <div class="module-grid">
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Crear libro" data-module-icon="bi-journal-plus">
           <div class="module-icon text-bg-primary"><i class="bi bi-journal-plus"></i></div>
           <h2 class="h6 mt-3">Crear libro</h2>
           <p class="small text-muted">Publica una obra pública, privada o borrador.</p>
@@ -280,7 +280,7 @@
           </select>
           <button id="btnCreateBook" class="btn btn-sm btn-primary w-100">Guardar libro</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Crear comunidad" data-module-icon="bi-people">
           <div class="module-icon text-bg-success"><i class="bi bi-people"></i></div>
           <h2 class="h6 mt-3">Crear comunidad</h2>
           <p class="small text-muted">Organiza lectores por tipo público o privado.</p>
@@ -292,7 +292,7 @@
           <textarea id="communityRules" class="form-control form-control-sm mb-2" rows="2" placeholder="Reglas"></textarea>
           <button id="btnCreateCommunity" class="btn btn-sm btn-success w-100">Guardar comunidad</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Publicación rápida" data-module-icon="bi-megaphone">
           <div class="module-icon text-bg-dark"><i class="bi bi-megaphone"></i></div>
           <h2 class="h6 mt-3">Publicación rápida</h2>
           <p class="small text-muted">Comparte novedades con lectores y comunidades.</p>
@@ -313,14 +313,14 @@
         </div>
       </div>
       <div class="module-grid">
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Analítica" data-module-icon="bi-graph-up-arrow">
           <div class="module-icon text-bg-info"><i class="bi bi-graph-up-arrow"></i></div>
           <h2 class="h6 mt-3">Analítica de comunidad</h2>
           <p class="small text-muted">Vistas, búsquedas, miembros y publicaciones para decisiones de mercado.</p>
           <input id="mixAnalyticsCommunityId" class="form-control form-control-sm mb-2" placeholder="ID comunidad">
           <button id="btnMixAnalytics" class="btn btn-sm btn-info w-100">Cargar analítica</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Moderación" data-module-icon="bi-shield-lock">
           <div class="module-icon text-bg-danger"><i class="bi bi-shield-lock"></i></div>
           <h2 class="h6 mt-3">Moderación</h2>
           <p class="small text-muted">Bloquea, restringe o reactiva miembros de tu comunidad.</p>
@@ -334,7 +334,7 @@
           <input id="modNote" class="form-control form-control-sm mb-2" placeholder="Nota administrativa">
           <button id="btnModerateMember" class="btn btn-sm btn-danger w-100">Aplicar</button>
         </div>
-        <div class="app-card module-card info-card">
+        <div class="app-card module-card info-card" data-module-label="Tablas usadas" data-module-icon="bi-table">
           <div class="module-icon text-bg-secondary"><i class="bi bi-table"></i></div>
           <h2 class="h6 mt-3">Tablas usadas</h2>
           <ul class="small text-muted mb-3">
