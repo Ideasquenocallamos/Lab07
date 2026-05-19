@@ -151,3 +151,33 @@ export const getTablesOverview = async (req, res) => {
   }));
   res.json({ generated_at: new Date().toISOString(), privacy: 'Solo datos vinculados a tu cuenta e interacciones', tables });
 };
+
+
+export const getRootDatabaseSnapshot = async (req, res) => {
+  if (req.userRole !== 'supervisor') return res.status(403).json({ message: 'Solo supervisor root' });
+  const models = [
+    { key: 'users', model: db.user, order: 'id' },
+    { key: 'autores', model: db.autor, order: 'id_autor' },
+    { key: 'libros', model: db.libro, order: 'id_libro' },
+    { key: 'comunidades', model: db.comunidad, order: 'id_comunidad' },
+    { key: 'miembros', model: db.member, order: 'id_member' },
+    { key: 'posts', model: db.post, order: 'id_post' },
+    { key: 'notificaciones', model: db.notification, order: 'id_notification' },
+    { key: 'eventos', model: db.bookEvent, order: 'id_event' },
+    { key: 'salas', model: db.sala, order: 'id_sala' },
+    { key: 'mensajes_sala', model: db.salaMessage, order: 'id_msg' },
+    { key: 'chat', model: db.chat, order: 'id_chat' }
+  ];
+  const tables = await Promise.all(models.map(async ({ key, model, order }) => {
+    try {
+      const [count, rows] = await Promise.all([
+        model.count(),
+        model.findAll({ order: [[order, 'DESC']], limit: 20 })
+      ]);
+      return { key, count, rows, scope: 'root' };
+    } catch {
+      return { key, count: 0, rows: [], scope: 'root' };
+    }
+  }));
+  res.json({ generated_at: new Date().toISOString(), mode: 'supervisor_root', tables });
+};
