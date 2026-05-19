@@ -85,6 +85,7 @@
               <option value="borrador">Borrador</option>
               <option value="en_revision">En revisión</option>
               <option value="publicada">Publicada</option>
+              <option value="inhabilitada">Inhabilitada</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -192,7 +193,7 @@
         </div>
       </div>
       <div class="module-grid">
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Buscar obras" data-module-icon="bi-search-heart">
           <div class="module-icon text-bg-primary"><i class="bi bi-search-heart"></i></div>
           <h2 class="h6 mt-3">Buscar obras</h2>
           <p class="small text-muted">Usa título, código privado o beta para borradores de prueba.</p>
@@ -206,6 +207,7 @@
                 <option value="borrador">Borrador</option>
                 <option value="en_revision">En revisión</option>
                 <option value="publicada">Publicada</option>
+              <option value="inhabilitada">Inhabilitada</option>
               </select>
             </div>
             <div class="col-6"><input id="readerAudience" class="form-control form-control-sm" placeholder="Audiencia"></div>
@@ -214,7 +216,7 @@
           <input id="readerPrivateCode" class="form-control form-control-sm mb-2" placeholder="Código privado/beta opcional">
           <button id="btnReaderSearch" class="btn btn-sm btn-primary w-100">Buscar con filtros</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Enlaces directos" data-module-icon="bi-link-45deg">
           <div class="module-icon text-bg-success"><i class="bi bi-link-45deg"></i></div>
           <h2 class="h6 mt-3">Enlaces directos</h2>
           <p class="small text-muted">Accesos rápidos a plataformas donde el autor puede compartir lectura.</p>
@@ -226,7 +228,7 @@
             <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noreferrer" href="https://drive.google.com/">Google Drive</a>
           </div>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Reseña" data-module-icon="bi-chat-square-heart">
           <div class="module-icon text-bg-warning"><i class="bi bi-chat-square-heart"></i></div>
           <h2 class="h6 mt-3">Reseña / comentario</h2>
           <p class="small text-muted">Deja una nota rápida para alimentar comentarios y análisis.</p>
@@ -234,7 +236,7 @@
           <textarea id="reviewText" class="form-control form-control-sm mb-2" rows="3" placeholder="Reseña, comentario o alerta"></textarea>
           <button id="btnSaveReview" class="btn btn-sm btn-warning w-100">Guardar reseña</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Entrar a comunidad" data-module-icon="bi-shield-check">
           <div class="module-icon text-bg-danger"><i class="bi bi-shield-check"></i></div>
           <h2 class="h6 mt-3">Entrar a comunidad</h2>
           <p class="small text-muted">Respeta reglas; autores/mixtos pueden restringir ataques o actividad dañina.</p>
@@ -254,7 +256,7 @@
         </div>
       </div>
       <div class="module-grid">
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Crear libro" data-module-icon="bi-journal-plus">
           <div class="module-icon text-bg-primary"><i class="bi bi-journal-plus"></i></div>
           <h2 class="h6 mt-3">Crear libro</h2>
           <p class="small text-muted">Publica una obra pública, privada o borrador.</p>
@@ -280,7 +282,7 @@
           </select>
           <button id="btnCreateBook" class="btn btn-sm btn-primary w-100">Guardar libro</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Crear comunidad" data-module-icon="bi-people">
           <div class="module-icon text-bg-success"><i class="bi bi-people"></i></div>
           <h2 class="h6 mt-3">Crear comunidad</h2>
           <p class="small text-muted">Organiza lectores por tipo público o privado.</p>
@@ -292,7 +294,7 @@
           <textarea id="communityRules" class="form-control form-control-sm mb-2" rows="2" placeholder="Reglas"></textarea>
           <button id="btnCreateCommunity" class="btn btn-sm btn-success w-100">Guardar comunidad</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Publicación rápida" data-module-icon="bi-megaphone">
           <div class="module-icon text-bg-dark"><i class="bi bi-megaphone"></i></div>
           <h2 class="h6 mt-3">Publicación rápida</h2>
           <p class="small text-muted">Comparte novedades con lectores y comunidades.</p>
@@ -313,14 +315,14 @@
         </div>
       </div>
       <div class="module-grid">
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Analítica" data-module-icon="bi-graph-up-arrow">
           <div class="module-icon text-bg-info"><i class="bi bi-graph-up-arrow"></i></div>
           <h2 class="h6 mt-3">Analítica de comunidad</h2>
           <p class="small text-muted">Vistas, búsquedas, miembros y publicaciones para decisiones de mercado.</p>
           <input id="mixAnalyticsCommunityId" class="form-control form-control-sm mb-2" placeholder="ID comunidad">
           <button id="btnMixAnalytics" class="btn btn-sm btn-info w-100">Cargar analítica</button>
         </div>
-        <div class="app-card module-card">
+        <div class="app-card module-card" data-module-label="Moderación" data-module-icon="bi-shield-lock">
           <div class="module-icon text-bg-danger"><i class="bi bi-shield-lock"></i></div>
           <h2 class="h6 mt-3">Moderación</h2>
           <p class="small text-muted">Bloquea, restringe o reactiva miembros de tu comunidad.</p>
@@ -334,7 +336,7 @@
           <input id="modNote" class="form-control form-control-sm mb-2" placeholder="Nota administrativa">
           <button id="btnModerateMember" class="btn btn-sm btn-danger w-100">Aplicar</button>
         </div>
-        <div class="app-card module-card info-card">
+        <div class="app-card module-card info-card" data-module-label="Tablas usadas" data-module-icon="bi-table">
           <div class="module-icon text-bg-secondary"><i class="bi bi-table"></i></div>
           <h2 class="h6 mt-3">Tablas usadas</h2>
           <ul class="small text-muted mb-3">
@@ -376,6 +378,7 @@
               <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo funciona el panel lector y los enlaces?">Panel lector</button>
               <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Qué tablas usa el aplicativo?">Tablas</button>
               <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo protejo una comunidad contra ataques?">Protección</button>
+              <button class="btn btn-sm btn-outline-secondary ai-prompt" data-question="¿Cómo busca la IA por reseñas e informes?">Buscador IA</button>
             </div>
           </div>
         </div>
@@ -384,10 +387,68 @@
             <label class="form-label fw-semibold"><i class="bi bi-chat-dots me-1"></i>Pregunta del aplicativo</label>
             <textarea id="aiQuestion" class="form-control mb-2" rows="3" placeholder="Ejemplo: ¿cómo genero el código premium para mixto?"></textarea>
             <button id="btnAskAi" class="btn btn-success w-100 mb-3"><i class="bi bi-send me-1"></i>Preguntar</button>
-            <div id="aiAnswer" class="assistant-answer">Elige una pregunta rápida o escribe una consulta sobre BookSocial.</div>
+            <div id="aiAnswer" class="assistant-answer mb-3">Elige una pregunta rápida o escribe una consulta sobre BookSocial.</div>
+            <label class="form-label fw-semibold"><i class="bi bi-search-heart me-1"></i>Buscador inteligente de libros</label>
+            <div class="input-group mb-2">
+              <input id="smartBookSearch" class="form-control" placeholder="Ejemplo: fantasía con buenas reseñas para jóvenes">
+              <button id="btnSmartBookSearch" class="btn btn-outline-success" type="button">Buscar IA</button>
+            </div>
+            <pre id="smartBookOut" class="result-box compact-result"></pre>
           </div>
         </div>
       </div>
+    </section>
+
+    <section id="tab-supervisor" class="tab-section d-none">
+      <div class="section-header mb-3">
+        <div>
+          <span class="badge text-bg-danger mb-2">Supervisor interno</span>
+          <h1 class="h4 mb-1">Verificación, informes y corrección manual</h1>
+          <p class="text-muted mb-0">Rol reservado para andersson.guevara.b@tecsup.edu.pe. Valida enlaces, documenta casos y puede suspender libros con mensaje de confianza.</p>
+        </div>
+      </div>
+      <div class="module-grid">
+        <div class="app-card module-card" data-module-label="Verificar enlaces" data-module-icon="bi-link-45deg">
+          <div class="module-icon text-bg-danger"><i class="bi bi-link-45deg"></i></div>
+          <h2 class="h6 mt-3">Validar enlaces de libro</h2>
+          <p class="small text-muted">Detecta URL inválida, errores HTTP y página no encontrada 404 antes de aprobar una obra.</p>
+          <input id="supValidateBookId" class="form-control form-control-sm mb-2" placeholder="ID libro">
+          <button id="btnSupervisorValidateLinks" class="btn btn-sm btn-danger w-100">Validar enlaces</button>
+        </div>
+        <div class="app-card module-card" data-module-label="Informe manual" data-module-icon="bi-clipboard2-check">
+          <div class="module-icon text-bg-warning"><i class="bi bi-clipboard2-check"></i></div>
+          <h2 class="h6 mt-3">Informe e inhabilitación</h2>
+          <p class="small text-muted">Documenta casos como libro no existente, enlace roto o contenido suspendido; el informe alimenta la IA.</p>
+          <input id="supReportBookId" class="form-control form-control-sm mb-2" placeholder="ID libro">
+          <select id="supReportAction" class="form-select form-select-sm mb-2">
+            <option value="inhabilitar">Inhabilitar / suspender</option>
+            <option value="reactivar">Reactivar en revisión</option>
+          </select>
+          <textarea id="supReportReason" class="form-control form-control-sm mb-2" rows="4" placeholder="Motivo visible: enlace 404, libro no existente, datos corregidos manualmente..."></textarea>
+          <button id="btnSupervisorReport" class="btn btn-sm btn-warning w-100">Guardar informe</button>
+        </div>
+        <div class="app-card module-card" data-module-label="Documentación" data-module-icon="bi-journal-text">
+          <div class="module-icon text-bg-secondary"><i class="bi bi-journal-text"></i></div>
+          <h2 class="h6 mt-3">Guía de casos</h2>
+          <ul class="small text-muted">
+            <li><b>404:</b> validar enlace, informar y suspender si la página no existe.</li>
+            <li><b>Libro no existente:</b> registrar motivo y marcar inhabilitado para que no aparezca al lector.</li>
+            <li><b>Corrección manual:</b> reactivar en revisión cuando el autor o supervisor corrija los datos.</li>
+          </ul>
+        </div>
+      
+        <div class="app-card module-card" data-module-label="Revisión oculta" data-module-icon="bi-eyeglasses">
+          <div class="module-icon text-bg-dark"><i class="bi bi-eyeglasses"></i></div>
+          <h2 class="h6 mt-3">Revisión manual (explícita e implícita)</h2>
+          <p class="small text-muted">Detecta errores directos y ocultos: enlaces sospechosos, reseñas con alerta, metadata incompleta y libros inhabilitados.</p>
+          <button id="btnSupervisorQueue" class="btn btn-sm btn-dark w-100 mb-2">Cargar cola de revisión</button>
+          <input id="supDeleteBookId" class="form-control form-control-sm mb-2" placeholder="ID libro para eliminar">
+          <textarea id="supDeleteReason" class="form-control form-control-sm mb-2" rows="2" placeholder="Motivo de eliminación para auditoría e IA"></textarea>
+          <button id="btnSupervisorDelete" class="btn btn-sm btn-outline-danger w-100">Eliminar libro por supervisor</button>
+        </div>
+
+      </div>
+      <pre id="supervisorOut" class="mt-3 result-box compact-result"></pre>
     </section>
   </main>
 
@@ -444,7 +505,15 @@
         </div>
         <div class="modal-body">
           <input id="logEmail" class="form-control mb-2" placeholder="Correo Gmail">
-          <input id="logPass" type="password" class="form-control" placeholder="Contraseña">
+          <input id="logPass" type="password" class="form-control mb-2" placeholder="Contraseña">
+          <div id="supervisorLoginCheck" class="admin-request-box p-2 rounded d-none">
+            <div class="small fw-semibold mb-2"><i class="bi bi-shield-lock me-1"></i>Comprobación supervisor si usas credenciales internas</div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <button id="btnLoginCaptcha" type="button" class="btn btn-sm btn-warning">Generar captcha</button>
+              <img id="loginCaptchaImg" class="captcha-img small-captcha" alt="captcha supervisor" />
+              <input id="loginCaptchaAnswer" class="form-control form-control-sm captcha-input" placeholder="Captcha">
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-success w-100" id="signin">Ingresar</button>
