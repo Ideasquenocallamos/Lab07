@@ -40,9 +40,11 @@ const handleError = (error) => {
 const closeModal = (id) => bootstrap.Modal.getInstance($(id))?.hide();
 window.addEventListener('error', (event) => handleError(event.error || new Error(event.message)));
 window.addEventListener('unhandledrejection', (event) => handleError(event.reason));
+const SUPERVISOR_EMAIL = 'andersson.guevara.b@tecsup.edu.pe';
 const isGmail = (email) => /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email || '');
-const isAutorRole = () => me && ['autor', 'mixto'].includes(me.rol);
-const isMixtoPremium = () => me?.rol === 'mixto' && me?.is_premium;
+const isSupervisorEmail = (email) => String(email || '').trim().toLowerCase() === SUPERVISOR_EMAIL;
+const isAutorRole = () => me && ['autor', 'mixto', 'supervisor'].includes(me.rol);
+const isMixtoPremium = () => me?.rol === 'supervisor' || (me?.rol === 'mixto' && me?.is_premium);
 const showJson = (id, data) => { $(id).textContent = JSON.stringify(data, null, 2); };
 const tabMeta = {
   home: { group: 'Principal', label: 'Home' },
@@ -50,7 +52,8 @@ const tabMeta = {
   lector: { group: 'Aplicaciones', label: 'Panel Lector' },
   autor: { group: 'Aplicaciones', label: 'Panel Autor' },
   mixto: { group: 'Aplicaciones', label: 'Mixto Premium' },
-  asistente: { group: 'Aplicaciones', label: 'Asistente IA / Chat' }
+  asistente: { group: 'Aplicaciones', label: 'Asistente IA / Chat' },
+  supervisor: { group: 'Aplicaciones', label: 'Supervisor' }
 };
 
 async function api(path, { method = 'GET', body, auth = false } = {}) {
@@ -75,7 +78,8 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
     if (auth && response.status === 401) {
       token = '';
       me = null;
-      localStorage.clear();
+      localStorage.removeItem('token');
+      localStorage.removeItem('me');
       renderUI();
       throw new Error('Sesión inválida, inicia sesión de nuevo');
     }
@@ -95,9 +99,10 @@ function updateBreadcrumb(tabName) {
 
 function resolveAllowedTab(tabName) {
   const target = maybe(`tab-${tabName}`) ? tabName : 'home';
-  if (!me && ['lector', 'autor', 'mixto'].includes(target)) return 'asistente';
+  if (!me && ['lector', 'autor', 'mixto', 'supervisor'].includes(target)) return 'asistente';
   if (target === 'autor' && !isAutorRole()) return me ? 'lector' : 'asistente';
   if (target === 'mixto' && !isMixtoPremium()) return me ? 'lector' : 'asistente';
+  if (target === 'supervisor' && me?.rol !== 'supervisor') return me ? 'lector' : 'asistente';
   return target;
 }
 
@@ -109,21 +114,96 @@ function showTab(tabName) {
   updateBreadcrumb(target);
 }
 
+
+const draftStorageKey = 'booksocial:auto-drafts:v1';
+let savedDrafts = {};
+try {
+  savedDrafts = JSON.parse(localStorage.getItem(draftStorageKey) || '{}');
+} catch {
+  localStorage.removeItem(draftStorageKey);
+}
+
+const saveDraftValue = (field) => {
+  if (!field.id || field.type === 'password' || field.closest('.result-box')) return;
+  savedDrafts[field.id] = field.type === 'checkbox' ? field.checked : field.value;
+  localStorage.setItem(draftStorageKey, JSON.stringify(savedDrafts));
+};
+
+function setupFieldAutosave() {
+  document.querySelectorAll('input[id], textarea[id], select[id]').forEach((field) => {
+    if (field.type === 'password' || field.closest('.result-box')) return;
+    if (Object.prototype.hasOwnProperty.call(savedDrafts, field.id)) {
+      if (field.type === 'checkbox') field.checked = Boolean(savedDrafts[field.id]);
+      else field.value = savedDrafts[field.id];
+    }
+    field.addEventListener('input', () => saveDraftValue(field));
+    field.addEventListener('change', () => saveDraftValue(field));
+  });
+}
+
+function setupPanelModuleNavigation() {
+  document.querySelectorAll('#tab-lector, #tab-autor, #tab-mixto, #tab-supervisor').forEach((section) => {
+    const grid = section.querySelector('.module-grid');
+    if (!grid || grid.closest('.panel-workspace')) return;
+    section.classList.add('panel-section');
+    const panelKey = section.id.replace('tab-', '');
+    const cards = [...grid.querySelectorAll('.module-card')];
+    const workspace = document.createElement('div');
+    workspace.className = 'panel-workspace';
+    const miniNav = document.createElement('nav');
+    miniNav.className = 'panel-mini-nav';
+    miniNav.setAttribute('aria-label', `Mini barra de ${tabMeta[panelKey]?.label || panelKey}`);
+    miniNav.innerHTML = '<div class="panel-mini-title"><i class="bi bi-layout-sidebar me-1"></i>Secciones</div>';
+
+    const activateModule = (index) => {
+      cards.forEach((card, cardIndex) => card.classList.toggle('active-module', cardIndex === index));
+      miniNav.querySelectorAll('.panel-mini-btn').forEach((button, buttonIndex) => {
+        button.classList.toggle('active', buttonIndex === index);
+        button.setAttribute('aria-pressed', String(buttonIndex === index));
+      });
+      localStorage.setItem(`booksocial:active-module:${panelKey}`, String(index));
+    };
+
+    cards.forEach((card, index) => {
+      const heading = card.querySelector('h2')?.textContent?.trim() || `Sección ${index + 1}`;
+      const label = card.dataset.moduleLabel || heading;
+      const icon = card.dataset.moduleIcon || 'bi-grid';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'panel-mini-btn';
+      button.setAttribute('aria-pressed', 'false');
+      button.innerHTML = `<i class="bi ${icon}"></i><span>${label}</span>`;
+      button.addEventListener('click', () => activateModule(index));
+      miniNav.appendChild(button);
+    });
+
+    section.insertBefore(workspace, grid);
+    workspace.append(miniNav, grid);
+    const storedIndex = Number(localStorage.getItem(`booksocial:active-module:${panelKey}`));
+    activateModule(Number.isInteger(storedIndex) && storedIndex >= 0 && storedIndex < cards.length ? storedIndex : 0);
+
+    const hint = document.createElement('p');
+    hint.className = 'autosave-hint';
+    hint.innerHTML = '<i class="bi bi-save2 me-1"></i>Autoguardado activo: tus campos se conservan al cambiar de sección.';
+    miniNav.appendChild(hint);
+  });
+}
+
 function renderUI() {
   const roleLabel = me ? `${me.rol}${me.is_premium ? ' premium' : ''}` : 'Visitante';
   $('session').textContent = me ? `Sesión activa: ${me.nombre} (${roleLabel})` : 'Sin sesión';
   $('roleBadge').textContent = roleLabel;
-  $('roleBadge').className = `badge rounded-pill role-badge ${me?.rol === 'mixto' ? 'text-bg-info' : me?.rol === 'autor' ? 'text-bg-warning' : me ? 'text-bg-success' : 'text-bg-secondary'}`;
+  $('roleBadge').className = `badge rounded-pill role-badge ${me?.rol === 'supervisor' ? 'text-bg-danger' : me?.rol === 'mixto' ? 'text-bg-info' : me?.rol === 'autor' ? 'text-bg-warning' : me ? 'text-bg-success' : 'text-bg-secondary'}`;
   $('openRegisterBtn').classList.toggle('d-none', Boolean(me));
   $('openLoginBtn').classList.toggle('d-none', Boolean(me));
   $('logout').classList.toggle('d-none', !me);
   $('navLector').classList.toggle('d-none', !me);
   $('navAutor').classList.toggle('d-none', !isAutorRole());
   $('navMixto').classList.toggle('d-none', !isMixtoPremium());
-  $('secondaryHint').textContent = me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
+    $('secondaryHint').textContent = me?.rol === 'supervisor' ? 'Supervisor activo: pruebas, enlaces e informes.' : me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
   $('authorCodePanel').classList.toggle('d-none', !isAutorRole());
   $('guestHelpPanel').classList.toggle('d-none', Boolean(isAutorRole()));
-  const canUpgrade = Boolean(me && !isMixtoPremium());
+  const canUpgrade = Boolean(me && !isMixtoPremium() && me?.rol !== 'supervisor');
   $('roleUpgradePanel').classList.toggle('d-none', !canUpgrade);
   const activeSection = document.querySelector('.tab-section:not(.d-none)');
   const activeTab = activeSection?.id?.replace('tab-', '');
@@ -154,6 +234,8 @@ function updateRoleUI() {
     : 'Para lector no necesitas código admin.';
 }
 
+setupFieldAutosave();
+setupPanelModuleNavigation();
 renderUI();
 updateRoleUI();
 
@@ -183,16 +265,37 @@ $('signup').onclick = async () => {
   }
 };
 
+const requestSupervisorCaptcha = async () => {
+  try {
+    const captcha = await api('/api/auth/captcha');
+    loginCaptchaId = captcha.captcha_id;
+    $('loginCaptchaImg').src = captcha.image_base64;
+    showSuccess('Captcha supervisor generado', 'Escribe el código para completar la verificación de identidad.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 $('signin').onclick = async () => {
   try {
     const email = $('logEmail').value.trim();
     const password = $('logPass').value;
     if (!email || !password) throw new Error('Completa Gmail y contraseña.');
-    if (!isGmail(email)) throw new Error('Debes iniciar sesión con un correo @gmail.com.');
-    const data = await api('/api/auth/signin', {
-      method: 'POST',
-      body: { email, password }
-    });
+    if (!isGmail(email) && !isSupervisorEmail(email)) throw new Error('Debes iniciar sesión con Gmail o con el correo interno de supervisor.');
+    let data;
+    try {
+      data = await api('/api/auth/signin', {
+        method: 'POST',
+        body: { email, password, captcha_id: loginCaptchaId, answer: $('loginCaptchaAnswer').value.trim() }
+      });
+    } catch (error) {
+      if (error.message.includes('Ahora completa el captcha')) {
+        $('supervisorLoginCheck').classList.remove('d-none');
+        await requestSupervisorCaptcha();
+        throw new Error('Credenciales verificadas. Completa el captcha supervisor y vuelve a ingresar.');
+      }
+      throw error;
+    }
     token = data.accessToken;
     me = data;
     localStorage.setItem('token', token);
@@ -208,7 +311,8 @@ $('signin').onclick = async () => {
 $('logout').onclick = () => {
   token = '';
   me = null;
-  localStorage.clear();
+  localStorage.removeItem('token');
+  localStorage.removeItem('me');
   renderUI();
   showSuccess('Sesión cerrada', 'Saliste correctamente de BookSocial.');
 };
@@ -589,7 +693,9 @@ const appAnswers = [
   { keys: ['lector', 'enlaces', 'wattpad', 'ao3', 'fanfiction', 'webnovel', 'drive'], answer: 'El panel Lector permite buscar obras con filtros por género, estado, audiencia y año; si no tienes cuenta solo verás la aplicación IA / Chat desde la navegación de aplicaciones.' },
   { keys: ['tabla', 'tablas', 'registros'], answer: 'En Mixto Premium, abre Tablas usadas y pulsa Ver mis registros privados. Solo verás datos vinculados a tu cuenta; cada registro está oculto con ojito y al mostrar uno se oculta cualquier otro abierto.' },
   { keys: ['ataque', 'ataques', 'proteccion', 'proteger'], answer: 'Para proteger comunidades usa invitación privada, reglas claras y moderación Mixto Premium: activo, restringido o bloqueado. Las reseñas/eventos ayudan a detectar actividad dañina.' },
-  { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' }
+  { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' },
+  { keys: ['supervisor', '404', 'inhabilitar', 'informe'], answer: 'El rol Supervisor es interno y no se registra. Entra con el correo autorizado, completa captcha, valida enlaces y documenta motivos para inhabilitar o reactivar libros; estos informes alimentan la búsqueda IA.' },
+  { keys: ['busca', 'buscar', 'reseñas', 'inteligente'], answer: 'El buscador IA usa título, género, etiquetas, audiencia, reseñas e informes del supervisor para recomendar libros activos y evitar obras inhabilitadas.' }
 ];
 
 const answerBookSocialQuestion = (question) => {
@@ -600,8 +706,15 @@ const answerBookSocialQuestion = (question) => {
   return 'Solo puedo ayudar con este aplicativo BookSocial: acceso, roles, lector, autor, mixto premium, libros, enlaces, comunidades, tablas, analítica, moderación, códigos, captcha o despliegue.';
 };
 
-$('btnAskAi').onclick = () => {
-  $('aiAnswer').textContent = answerBookSocialQuestion($('aiQuestion').value);
+$('btnAskAi').onclick = async () => {
+  try {
+    const pregunta = $('aiQuestion').value.trim();
+    if (!pregunta) throw new Error('Escribe una pregunta del aplicativo.');
+    const apiAnswer = await api('/api/chat/ask', { method: 'POST', body: { pregunta } });
+    $('aiAnswer').textContent = apiAnswer.respuesta;
+  } catch {
+    $('aiAnswer').textContent = answerBookSocialQuestion($('aiQuestion').value);
+  }
 };
 
 document.querySelectorAll('.ai-prompt').forEach((button) => {
@@ -612,6 +725,48 @@ document.querySelectorAll('.ai-prompt').forEach((button) => {
 });
 
 
+
+$('btnSmartBookSearch').onclick = async () => {
+  try {
+    const q = $('smartBookSearch').value.trim();
+    if (!q) throw new Error('Escribe qué libro quieres encontrar con IA.');
+    const data = await api(`/api/libros/ai-search?q=${encodeURIComponent(q)}`);
+    showJson('smartBookOut', data);
+    $('aiAnswer').textContent = data.respuesta;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnSupervisorValidateLinks').onclick = async () => {
+  try {
+    const id = $('supValidateBookId').value.trim();
+    if (!id) throw new Error('Escribe el ID del libro a validar.');
+    const result = await api(`/api/libros/${id}/validate-links`, { method: 'POST', auth: true });
+    showJson('supervisorOut', result);
+    showSuccess('Validación de enlaces completada', 'Revisa si hay 404, URL inválida o advertencias de conexión.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnSupervisorReport').onclick = async () => {
+  try {
+    const id = $('supReportBookId').value.trim();
+    const motivo = $('supReportReason').value.trim();
+    if (!id || !motivo) throw new Error('Escribe ID de libro y motivo del informe.');
+    const result = await api(`/api/libros/${id}/supervisor-report`, {
+      method: 'POST',
+      auth: true,
+      body: { action: $('supReportAction').value, motivo }
+    });
+    showJson('supervisorOut', result);
+    showSuccess('Informe supervisor guardado', 'El estado del libro y la documentación quedaron registrados para alimentar la IA.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 const formatBookList = (books) => books.map((book) => ({
   id: book.id_libro,
   titulo: book.titulo,
@@ -619,6 +774,8 @@ const formatBookList = (books) => books.map((book) => ({
   genero: book.genero,
   etiquetas: book.etiquetas,
   visibilidad: book.visibilidad,
+  estado: book.estado_obra,
+  motivo_suspension: book.suspension_reason,
   codigo_beta: book.beta_reader_code,
   reseñas: book.comentarios_resenas,
   enlaces: {
