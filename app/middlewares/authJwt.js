@@ -13,16 +13,22 @@ export const verifyToken = (req, res, next) => {
 };
 
 export const isAutor = async (req, res, next) => {
-  if (["autor", "mixto"].includes(req.userRole)) return next();
+  if (["autor", "mixto", "supervisor"].includes(req.userRole)) return next();
   const user = await db.user.findByPk(req.userId);
-  if (!user || !["autor", "mixto"].includes(user.rol)) return res.status(403).json({ message: "Solo autores administradores" });
+  if (!user || !["autor", "mixto", "supervisor"].includes(user.rol)) return res.status(403).json({ message: "Solo autores administradores" });
   next();
 };
 
 export const isMixtoPremium = async (req, res, next) => {
+  if (req.userRole === "supervisor") return next();
   const user = await db.user.findByPk(req.userId);
   if (!user || user.rol !== "mixto" || !user.is_premium) {
-    return res.status(403).json({ message: "Función premium exclusiva para cuentas mixtas" });
+    return res.status(403).json({ message: "Función premium exclusiva para cuentas mixtas o supervisor" });
   }
   next();
+};
+
+export const isSupervisor = (req, res, next) => {
+  if (req.userRole === "supervisor") return next();
+  return res.status(403).json({ message: "Solo el supervisor puede usar este módulo" });
 };

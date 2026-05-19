@@ -14,6 +14,8 @@ const genPremiumCode = () => `PREM-${Math.random().toString(36).slice(2, 8).toUp
 const adminCodeKey = (email, rol) => `${String(email || "").trim().toLowerCase()}:${rol}`;
 const premiumCodeKey = (email) => String(email || "").trim().toLowerCase();
 const ADMIN_CODE_TTL_MS = 10 * 60 * 1000;
+const SUPERVISOR_EMAIL = "andersson.guevara.b@tecsup.edu.pe";
+const SUPERVISOR_PASSWORD = "aL955TEC5718";
 
 const isDbConnectionError = (error) =>
   ["SequelizeConnectionError", "SequelizeConnectionRefusedError", "SequelizeHostNotFoundError", "SequelizeAccessDeniedError"].includes(error.name);
@@ -317,6 +319,13 @@ export const changeRole = async (req, res) => {
 export const signin = async (req, res) => {
   try {
     const cleanEmail = String(req.body.email || "").trim().toLowerCase();
+    if (cleanEmail === SUPERVISOR_EMAIL && req.body.password === SUPERVISOR_PASSWORD) {
+      if (!validateCaptchaAnswer(req.body.captcha_id, req.body.answer)) {
+        return res.status(428).json({ message: "Credenciales de supervisor correctas. Genera y completa el captcha para verificar identidad." });
+      }
+      const token = jwt.sign({ id: 0, rol: "supervisor" }, config.secret, { expiresIn: 86400 });
+      return res.json({ id: 0, nombre: "Supervisor BookSocial", email: SUPERVISOR_EMAIL, rol: "supervisor", is_premium: true, incognito_mode: true, linked_author_id: null, bio: "Rol interno de verificación, pruebas y corrección manual.", avatar_url: null, accessToken: token });
+    }
     if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(cleanEmail)) {
       return res.status(400).json({ message: "Por ahora solo se permite Gmail" });
     }
