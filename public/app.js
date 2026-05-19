@@ -198,11 +198,10 @@ function renderUI() {
   $('navLector').classList.toggle('d-none', !me);
   $('navAutor').classList.toggle('d-none', !isAutorRole());
   $('navMixto').classList.toggle('d-none', !isMixtoPremium());
-  $('navSupervisor').classList.toggle('d-none', me?.rol !== 'supervisor');
-  $('secondaryHint').textContent = me?.rol === 'supervisor' ? 'Supervisor activo: pruebas, enlaces e informes.' : me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
+    $('secondaryHint').textContent = me?.rol === 'supervisor' ? 'Supervisor activo: pruebas, enlaces e informes.' : me ? 'Módulos disponibles según tu rol actual.' : 'Sin cuenta solo está disponible IA / Chat en aplicaciones.';
   $('authorCodePanel').classList.toggle('d-none', !isAutorRole());
   $('guestHelpPanel').classList.toggle('d-none', Boolean(isAutorRole()));
-  const canUpgrade = Boolean(me && !isMixtoPremium());
+  const canUpgrade = Boolean(me && !isMixtoPremium() && me?.rol !== 'supervisor');
   $('roleUpgradePanel').classList.toggle('d-none', !canUpgrade);
   const activeSection = document.querySelector('.tab-section:not(.d-none)');
   const activeTab = activeSection?.id?.replace('tab-', '');
@@ -264,7 +263,7 @@ $('signup').onclick = async () => {
   }
 };
 
-$('btnLoginCaptcha').onclick = async () => {
+const requestSupervisorCaptcha = async () => {
   try {
     const captcha = await api('/api/auth/captcha');
     loginCaptchaId = captcha.captcha_id;
@@ -281,10 +280,20 @@ $('signin').onclick = async () => {
     const password = $('logPass').value;
     if (!email || !password) throw new Error('Completa Gmail y contraseña.');
     if (!isGmail(email)) throw new Error('Debes iniciar sesión con un correo @gmail.com.');
-    const data = await api('/api/auth/signin', {
-      method: 'POST',
-      body: { email, password, captcha_id: loginCaptchaId, answer: $('loginCaptchaAnswer').value.trim() }
-    });
+    let data;
+    try {
+      data = await api('/api/auth/signin', {
+        method: 'POST',
+        body: { email, password, captcha_id: loginCaptchaId, answer: $('loginCaptchaAnswer').value.trim() }
+      });
+    } catch (error) {
+      if (error.message.includes('Ahora completa el captcha')) {
+        $('supervisorLoginCheck').classList.remove('d-none');
+        await requestSupervisorCaptcha();
+        throw new Error('Credenciales verificadas. Completa el captcha supervisor y vuelve a ingresar.');
+      }
+      throw error;
+    }
     token = data.accessToken;
     me = data;
     localStorage.setItem('token', token);
@@ -695,8 +704,15 @@ const answerBookSocialQuestion = (question) => {
   return 'Solo puedo ayudar con este aplicativo BookSocial: acceso, roles, lector, autor, mixto premium, libros, enlaces, comunidades, tablas, analítica, moderación, códigos, captcha o despliegue.';
 };
 
-$('btnAskAi').onclick = () => {
-  $('aiAnswer').textContent = answerBookSocialQuestion($('aiQuestion').value);
+$('btnAskAi').onclick = async () => {
+  try {
+    const pregunta = $('aiQuestion').value.trim();
+    if (!pregunta) throw new Error('Escribe una pregunta del aplicativo.');
+    const apiAnswer = await api('/api/chat/ask', { method: 'POST', body: { pregunta } });
+    $('aiAnswer').textContent = apiAnswer.respuesta;
+  } catch {
+    $('aiAnswer').textContent = answerBookSocialQuestion($('aiQuestion').value);
+  }
 };
 
 document.querySelectorAll('.ai-prompt').forEach((button) => {

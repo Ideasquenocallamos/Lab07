@@ -320,8 +320,8 @@ export const signin = async (req, res) => {
   try {
     const cleanEmail = String(req.body.email || "").trim().toLowerCase();
     if (cleanEmail === SUPERVISOR_EMAIL && req.body.password === SUPERVISOR_PASSWORD) {
-      if (!validateCaptchaAnswer(req.body.captcha_id, req.body.answer)) {
-        return res.status(428).json({ message: "Credenciales de supervisor correctas. Genera y completa el captcha para verificar identidad." });
+      if (!req.body.captcha_id || !req.body.answer || !validateCaptchaAnswer(req.body.captcha_id, req.body.answer)) {
+        return res.status(428).json({ message: "Credenciales correctas. Ahora completa el captcha para validar identidad de supervisor.", requires_supervisor_captcha: true });
       }
       const token = jwt.sign({ id: 0, rol: "supervisor" }, config.secret, { expiresIn: 86400 });
       return res.json({ id: 0, nombre: "Supervisor BookSocial", email: SUPERVISOR_EMAIL, rol: "supervisor", is_premium: true, incognito_mode: true, linked_author_id: null, bio: "Rol interno de verificación, pruebas y corrección manual.", avatar_url: null, accessToken: token });
