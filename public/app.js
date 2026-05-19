@@ -698,6 +698,7 @@ const appAnswers = [
   { keys: ['ataque', 'ataques', 'proteccion', 'proteger'], answer: 'Para proteger comunidades usa invitación privada, reglas claras y moderación Mixto Premium: activo, restringido o bloqueado. Las reseñas/eventos ayudan a detectar actividad dañina.' },
   { keys: ['railway', 'mysql', 'deploy'], answer: 'Para Railway usa variables DB_* o MYSQL*, JWT_SECRET, DB_SYNC_ALTER=true si necesitas sincronizar tablas, y npm install --omit=dev para evitar warnings de production.' },
   { keys: ['supervisor', '404', 'inhabilitar', 'informe'], answer: 'El rol Supervisor es interno y no se registra. Entra con el correo autorizado, completa captcha, valida enlaces y documenta motivos para inhabilitar o reactivar libros; estos informes alimentan la búsqueda IA.' },
+  { keys: ['eliminar', 'revision', 'oculto', 'implicito'], answer: 'Supervisor puede cargar cola de revisión explícita/implícita, suspender, reactivar y eliminar libros dejando motivo de auditoría para alimentar IA.' },
   { keys: ['busca', 'buscar', 'reseñas', 'inteligente'], answer: 'El buscador IA usa título, género, etiquetas, audiencia, reseñas e informes del supervisor para recomendar libros activos y evitar obras inhabilitadas.' }
 ];
 
@@ -839,6 +840,34 @@ $('btnJoinCommunity').onclick = async () => {
     });
     showJson('lectorOut', result);
     showSuccess('Solicitud procesada', 'La comunidad validó tu acceso o restricciones.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+
+$('btnSupervisorQueue').onclick = async () => {
+  try {
+    const result = await api('/api/libros/supervisor/review-queue', { auth: true });
+    showJson('supervisorOut', result);
+    showSuccess('Cola supervisor cargada', 'Incluye errores explícitos e implícitos para revisión manual.');
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+$('btnSupervisorDelete').onclick = async () => {
+  try {
+    const id = $('supDeleteBookId').value.trim();
+    const motivo = $('supDeleteReason').value.trim();
+    if (!id || !motivo) throw new Error('Escribe ID y motivo para eliminar libro.');
+    const result = await api(`/api/libros/${id}/supervisor-delete`, {
+      method: 'POST',
+      auth: true,
+      body: { motivo }
+    });
+    showJson('supervisorOut', result);
+    showSuccess('Eliminación supervisor aplicada', 'El registro quedó auditado para IA y trazabilidad.');
   } catch (error) {
     handleError(error);
   }

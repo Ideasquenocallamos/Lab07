@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addLibroReview, createLibro, deleteLibro, getLibro, getLibros, getLibrosPublicos, intelligentBookSearch, supervisorReportLibro, updateLibro, validateLibroLinks } from "../controllers/libro.controller.js";
+import { addLibroReview, createLibro, deleteLibro, getLibro, getLibros, getLibrosPublicos, intelligentBookSearch, supervisorDeleteLibro, supervisorReportLibro, supervisorReviewQueue, updateLibro, validateLibroLinks } from "../controllers/libro.controller.js";
 import { isAutor, isSupervisor, verifyToken } from "../middlewares/authJwt.js";
 import { requireFields } from "../middlewares/validate.js";
 
@@ -13,5 +13,7 @@ router.post("/api/libros/:id/review", verifyToken, requireFields(["texto"]), add
 router.put("/api/libros/:id", verifyToken, isAutor, updateLibro);
 router.post("/api/libros/:id/validate-links", verifyToken, isSupervisor, validateLibroLinks);
 router.post("/api/libros/:id/supervisor-report", verifyToken, isSupervisor, requireFields(["motivo"]), supervisorReportLibro);
+router.get("/api/libros/supervisor/review-queue", verifyToken, isSupervisor, supervisorReviewQueue);
+router.post("/api/libros/:id/supervisor-delete", verifyToken, isSupervisor, requireFields(["motivo"]), supervisorDeleteLibro);
 router.delete("/api/libros/:id", verifyToken, isAutor, deleteLibro);
 export default router;

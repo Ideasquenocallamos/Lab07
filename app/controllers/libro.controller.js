@@ -252,6 +252,50 @@ export const intelligentBookSearch = async (req, res) => {
   }
 };
 
+
+export const supervisorDeleteLibro = async (req, res) => {
+  try {
+    const libro = await Libro.findByPk(req.params.id);
+    if (!libro) return res.status(404).json({ message: "Libro no encontrado" });
+    const motivo = String(req.body.motivo || "El supervisor eliminó el libro por revisión manual.").trim();
+    await trackBookEvent({ req, id_libro: libro.id_libro, event_type: "informe_supervisor", source: "supervisor_delete", metadata: { motivo, titulo: libro.titulo } });
+    await libro.destroy();
+    res.json({ message: "Libro eliminado por supervisor", motivo });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const supervisorReviewQueue = async (req, res) => {
+  try {
+    const libros = await Libro.findAll({ include: [{ model: Autor, attributes: ["id_autor", "nombre_autor"] }], limit: 200, order: [["id_libro", "DESC"]] });
+    const inferIssue = (libro) => {
+      const issues = [];
+      const report = String(libro.link_validation_report || "").toLowerCase();
+      if (libro.estado_obra === "inhabilitada") issues.push("inhabilitada");
+      if (report.includes("404") || report.includes("url_invalida") || report.includes("protocolo_invalido")) issues.push("enlace_roto");
+      if (!libro.titulo || !libro.derechos) issues.push("metadatos_incompletos");
+      if ((libro.comentarios_resenas || "").toLowerCase().includes("alerta")) issues.push("alerta_resena");
+      if (issues.length === 0) issues.push("revision_oculta_sugerida");
+      return issues;
+    };
+    const queue = libros.map((libro) => ({
+      id_libro: libro.id_libro,
+      titulo: libro.titulo,
+      autor: libro.autore?.nombre_autor,
+      estado_obra: libro.estado_obra,
+      visibilidad: libro.visibilidad,
+      motivos_revision: inferIssue(libro),
+      suspension_reason: libro.suspension_reason,
+      supervisor_report: libro.supervisor_report,
+      link_validation_report: libro.link_validation_report
+    }));
+    res.json({ message: "Cola de revisión supervisor (explícita e implícita)", total: queue.length, queue });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getLibrosPublicos = async (req, res) => {
   const { q } = req.query;
   const where = buildBookSearchWhere(req.query, { visibilidad: "publico", ...disabledWhere() });

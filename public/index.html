@@ -439,6 +439,17 @@
             <li><b>Corrección manual:</b> reactivar en revisión cuando el autor o supervisor corrija los datos.</li>
           </ul>
         </div>
+      
+        <div class="app-card module-card" data-module-label="Revisión oculta" data-module-icon="bi-eyeglasses">
+          <div class="module-icon text-bg-dark"><i class="bi bi-eyeglasses"></i></div>
+          <h2 class="h6 mt-3">Revisión manual (explícita e implícita)</h2>
+          <p class="small text-muted">Detecta errores directos y ocultos: enlaces sospechosos, reseñas con alerta, metadata incompleta y libros inhabilitados.</p>
+          <button id="btnSupervisorQueue" class="btn btn-sm btn-dark w-100 mb-2">Cargar cola de revisión</button>
+          <input id="supDeleteBookId" class="form-control form-control-sm mb-2" placeholder="ID libro para eliminar">
+          <textarea id="supDeleteReason" class="form-control form-control-sm mb-2" rows="2" placeholder="Motivo de eliminación para auditoría e IA"></textarea>
+          <button id="btnSupervisorDelete" class="btn btn-sm btn-outline-danger w-100">Eliminar libro por supervisor</button>
+        </div>
+
       </div>
       <pre id="supervisorOut" class="mt-3 result-box compact-result"></pre>
     </section>
