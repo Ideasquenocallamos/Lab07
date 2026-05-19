@@ -9,6 +9,7 @@ try {
 let captchaId = '';
 let regCaptchaId = '';
 let upgradeCaptchaId = '';
+let loginCaptchaId = '';
 
 const $ = (id) => {
   const element = document.getElementById(id);
@@ -275,6 +276,8 @@ const requestSupervisorCaptcha = async () => {
     handleError(error);
   }
 };
+
+$('btnLoginCaptcha').onclick = requestSupervisorCaptcha;
 
 $('signin').onclick = async () => {
   try {
