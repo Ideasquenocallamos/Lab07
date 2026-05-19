@@ -276,3 +276,142 @@ body {
   text-overflow: ellipsis;
   vertical-align: bottom;
 }
+
+.panel-section {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.panel-workspace {
+  align-items: stretch;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+}
+
+.panel-mini-nav {
+  align-self: start;
+  background: #ffffff;
+  border: 1px solid #dbe4ef;
+  border-radius: 18px;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  position: sticky;
+  top: 18px;
+}
+
+.panel-mini-title {
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.panel-mini-btn {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #334155;
+  display: grid;
+  font-weight: 700;
+  gap: 10px;
+  grid-template-columns: 38px 1fr;
+  padding: 10px;
+  text-align: left;
+  transition: all 0.18s ease;
+  width: 100%;
+}
+
+.panel-mini-btn i {
+  align-items: center;
+  background: #e0f2fe;
+  border-radius: 12px;
+  color: #0369a1;
+  display: inline-flex;
+  font-size: 1.1rem;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.panel-mini-btn span {
+  line-height: 1.15;
+}
+
+.panel-mini-btn.active,
+.panel-mini-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  transform: translateX(3px);
+}
+
+.panel-section .module-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.panel-section .module-card {
+  display: none;
+}
+
+.panel-section .module-card.active-module {
+  display: block;
+  min-height: 430px;
+  padding: 34px;
+}
+
+.panel-section .module-card.active-module .module-icon {
+  font-size: 1.8rem;
+  height: 64px;
+  width: 64px;
+}
+
+.panel-section .module-card.active-module h2 {
+  font-size: 1.35rem;
+}
+
+.panel-section .module-card.active-module .form-control,
+.panel-section .module-card.active-module .form-select,
+.panel-section .module-card.active-module .btn {
+  font-size: 1rem;
+  min-height: 44px;
+}
+
+.panel-section .compact-result {
+  border: 2px solid #172554;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.22);
+  margin-left: calc(230px + 18px);
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+}
+
+.autosave-hint {
+  color: #64748b;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .panel-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-mini-nav {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    position: static;
+  }
+
+  .panel-mini-title {
+    grid-column: 1 / -1;
+  }
+
+  .panel-section .compact-result {
+    margin-left: 0;
+  }
+}
